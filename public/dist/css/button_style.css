@@ -1,0 +1,140 @@
+
+/* 💎 Glassmorphism Checkbox Buttons */
+.glass-chk-label {
+    position: relative;
+    display: flex;
+    items-center: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 15px -2px rgba(0, 0, 0, 0.03), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.glass-chk-label:hover {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(21, 76, 159, 0.3);
+    transform: translateY(-1.5px);
+    box-shadow: 0 8px 20px -4px rgba(21, 76, 159, 0.12);
+}
+
+/* 🟢 เมื่อ Checkbox ถูกเลือก (Checked Active State) */
+.glass-chk-label:has(.chk-course-type:checked) {
+    background: linear-gradient(135deg, rgba(21, 76, 159, 0.08) 0%, rgba(20, 184, 166, 0.08) 100%);
+    border-color: #154c9f;
+    box-shadow: 0 8px 25px -4px rgba(21, 76, 159, 0.25), inset 0 0 0 1px #154c9f;
+}
+
+/* 🎨 Custom Checkbox Indicator Icon */
+.glass-chk-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.5rem;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    flex-shrink: 0;
+}
+
+.glass-chk-label:has(.chk-course-type:checked) .glass-chk-icon {
+    background: #154c9f;
+    border-color: #154c9f;
+    color: #ffffff;
+    transform: scale(1.05);
+}
+
+.glass-chk-icon i {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s ease;
+}
+
+.glass-chk-label:has(.chk-course-type:checked) .glass-chk-icon i {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* 💎 Glassmorphic Button Group Grid */
+.glass-btn-group {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+    .glass-btn-group {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.glass-btn-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.875rem;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.03);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.glass-btn-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(21, 76, 159, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px -2px rgba(21, 76, 159, 0.12);
+}
+
+/* 🟢 เมื่อเลือก Button (Active State) */
+.glass-btn-item:has(.chk-course-type:checked) {
+    background: linear-gradient(135deg, rgba(21, 76, 159, 0.08) 0%, rgba(20, 184, 166, 0.08) 100%);
+    border-color: #154c9f;
+    box-shadow: 0 4px 15px -2px rgba(21, 76, 159, 0.2), inset 0 0 0 1px #154c9f;
+}
+
+/* 🔘 Checkmark Indicator Ring */
+.glass-btn-check {
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 9999px;
+    border: 1.5px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    flex-shrink: 0;
+}
+
+.glass-btn-item:has(.chk-course-type:checked) .glass-btn-check {
+    background: #154c9f;
+    border-color: #154c9f;
+    color: #ffffff;
+    transform: scale(1.08);
+}
+
+.glass-btn-check i {
+    opacity: 0;
+    transform: scale(0.4);
+    transition: all 0.2s ease;
+}
+
+.glass-btn-item:has(.chk-course-type:checked) .glass-btn-check i {
+    opacity: 1;
+    transform: scale(1);
+}

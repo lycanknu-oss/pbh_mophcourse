@@ -1,0 +1,20 @@
+{
+  "name": "pbh-training",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:css": "sass src/scss/main.scss public/dist/css/main.css --load-path=node_modules --no-source-map",
+    "watch:css": "sass src/scss/main.scss public/dist/css/main.css --load-path=node_modules --watch --no-source-map"
+  },
+  "devDependencies": {
+    "sass": "^1.101.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

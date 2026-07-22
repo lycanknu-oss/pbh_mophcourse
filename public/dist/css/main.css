@@ -1,0 +1,82 @@
+/* 🔤 นำเข้า Google Fonts: IBM Plex Sans Thai และ Sarabun */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --moph-blue: #154c9f;
+    --moph-teal: #0d9488;
+}
+
+/* 📌 บังคับใช้ Font Sarabun และ IBM Plex Sans Thai ทั้งหมด */
+body, input, select, textarea, table, button, p, span, a, label, li, div, h1, h2, h3, h4, h5, h6 {
+    font-family: 'Sarabun', 'IBM Plex Sans Thai', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* บังคับส่วน หัวข้อ/เน้นข้อความ ให้ใช้ IBM Plex Sans Thai เพิ่มความคมชัด */
+h1, h2, h3, h4, h5, h6, .font-heading, .font-ibm {
+    font-family: 'IBM Plex Sans Thai', 'Sarabun', sans-serif !important;
+}
+
+/* 💎 Content Div Glass White (พื้นหลังขาว สะอาดตา อ่านง่าย) */
+.liquid-glass-content {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02) !important;
+}
+
+.liquid-glass-card-white {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    transition: all 0.25s ease-in-out;
+}
+
+.liquid-glass-card-white:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -6px rgba(21, 76, 159, 0.12) !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* 🔘 Palette Buttons & Glass Filter Tabs */
+.filter-tab-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-tab-btn.active {
+    background-color: #154c9f !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(21, 76, 159, 0.25) !important;
+    border-color: #154c9f !important;
+}
+
+/* บังคับใช้ขนาดตัวอักษรจิ๋วแต่คมชัด */
+.text-xxs {
+    font-size: 0.65rem !important; /* ~10px */
+    line-height: 0.85rem !important;
+}
+
+/* 📌 บังคับให้ Dropdown ของ jQuery UI ลอยขึ้นมาอยู่ด้านหน้า SweetAlert2 Modal */
+.ui-autocomplete {
+    z-index: 10000 !important;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+    padding: 4px !important;
+    font-family: 'Sarabun', sans-serif !important;
+}
+
+.ui-menu-item .ui-menu-item-wrapper {
+    border-radius: 0.5rem !important;
+    padding: 6px 10px !important;
+}
+
+.ui-menu-item .ui-menu-item-wrapper.ui-state-active {
+    background-color: #eff6ff !important;
+    color: #154c9f !important;
+    border: none !important;
+}
