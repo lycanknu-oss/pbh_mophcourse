@@ -21,4 +21,10 @@ class UploadFileModel extends Model
         'd_update'
     ];
     protected $useTimestamps    = false; // เนื่องจากเราใช้ TIMESTAMP DEFAULT ใน SQL แล้ว
+
+    public function countCourseFiles()
+    {
+        return $this->groupBy('cid')
+                    ->countAllResults();
+    }
 }

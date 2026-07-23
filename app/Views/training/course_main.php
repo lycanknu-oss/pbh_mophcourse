@@ -122,8 +122,13 @@ if (!empty($courses)){
                                 </div>
                             </div>
                         <?php endforeach; ?>
-                    </div>
-
+                        <!-- ปุ่มส่งหลักฐานการอบรม -->
+                        <a href="<?= base_url('upload.php') ?>" 
+                        class="px-3.5 py-1.5 bg-gradient-to-r from-[#154c9f] to-indigo-600 hover:from-[#0f3877] hover:to-indigo-700 text-white font-bold rounded-xl text-xs transition-all shadow-xs hover:shadow-md flex items-center gap-1.5 font-heading">
+                            <i class="bi bi-cloud-arrow-up text-sm"></i>
+                            <span>ส่งหลักฐานการอบรม</span>
+                        </a>
+                    </div>                    
                 </div>
             <?php endif; ?>
         <?php endforeach; ?>

@@ -160,9 +160,9 @@
                     <!-- Autocomplete Input -->
                     <div class="relative">
                         <label class="block text-sm font-bold text-slate-700 font-heading mb-1">
-                            <i class="bi bi-person-search text-[#154c9f]"></i> ค้นหาชื่อ-นามสกุล หรือ เลข CID บุคลากร <span class="text-rose-500">*</span>
+                            <i class="bi bi-person-search text-[#154c9f]"></i> ค้นหาเลขบัตรประชาชน / ชื่อบุคลากร <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" id="empSearchInput" placeholder="พิมพ์ชื่อ-นามสกุล หรือ เลข 13 หลัก เพื่อค้นหา..." class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-[#154c9f] focus:outline-none">
+                        <input type="text" id="empSearchInput" placeholder="พิมพ์เลขบัตรประชาชน 13 หลัก หรือ ชื่อเพื่อค้นหา..." class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:ring-2 focus:ring-[#154c9f] focus:outline-none">
                     </div>
 
                     <!-- Drag & Drop File Upload Area -->
@@ -191,35 +191,56 @@
             didOpen: () => {
                 // 🔍 เปิดใช้งาน jQuery UI Autocomplete แบบ AJAX
                 $("#empSearchInput").autocomplete({
+                    appendTo: ".swal2-popup", // ✨ บังคับให้เมนูแสดงผลใน Modal
                     source: function(request, response) {
                         $.ajax({
                             url: "<?= base_url('emp_search.php') ?>",
                             dataType: "json",
                             data: { term: request.term },
                             success: function(data) {
-                                response(data);
-                                console.log("Autocomplete AJAX Response:", data); // Debugging
+                                if (!data || !data.length) {
+                                    response([{ label: 'ไม่พบข้อมูลบุคลากร', value: '', emp_id: '', cid: '', isNull: true }]);
+                                } else {
+                                    response(data);
+                                }
+                            },
+                            error: function() {
+                                console.error("เกิดข้อผิดพลาดในการดึงข้อมูล Autocomplete");
                             }
                         });
                     },
-                    minLength: 2, // เริ่มค้นหาเมื่อพิมพ์ 2 ตัวอักษรขึ้นไป
+                    minLength: 1, // เริ่มค้นหาเมื่อพิมพ์ 1 ตัวอักษรขึ้นไป
                     select: function(event, ui) {
+                        if (ui.item.isNull) return false;
+
+                        // ตั้งค่า Input เมื่อเลือกจาก Dropdown
                         $("#empSearchInput").val(ui.item.fullname);
                         $("#selected_emp_id").val(ui.item.emp_id);
-                        $("#selected_cid").val(ui.item.cid);
+                        $("#selected_cid").val(ui.item.cid); // 📌 บันทึก CID ลง Hidden Input
                         return false;
                     }
                 }).autocomplete("instance")._renderItem = function(ul, item) {
-                    // ตกแต่ง Dropdown รายการผลลัพธ์การค้นหา
+                    if (item.isNull) {
+                        return $("<li>")
+                            .append(`<div class="p-2 text-sm text-slate-400 text-center">ไม่พบข้อมูลที่ค้นหา</div>`)
+                            .appendTo(ul);
+                    }
+
                     return $("<li>")
-                        .append(`<div class="p-2 border-b border-slate-100 text-sm hover:bg-blue-50 cursor-pointer">
-                                    <span class="font-bold text-slate-800">${item.prefix}${item.fullname}</span>
-                                    <span class="text-[13px] text-slate-400 block">CID: ${item.position}</span>
+                        .append(`<div class="p-2 text-sm hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-0">
+                                    <span class="font-bold text-slate-800 block">${item.fullname}</span>
+                                    <span class="text-[10px] text-slate-400">CID: ${item.position}</span>
                                 </div>`)
                         .appendTo(ul);
                 };
 
-                // Drag & Drop Handling (โค้ดส่วนเดิม)
+                // ⚠️ เคลียร์ CID ทันทีหากผู้ใช้ทำการพิมพ์/แก้ไขข้อความใน Input ด้วยตัวเองโดยไม่ได้เลือกจากผลการค้นหา
+                $("#empSearchInput").on("input", function() {
+                    $("#selected_emp_id").val("");
+                    $("#selected_cid").val("");
+                });
+
+                // Drag & Drop Handling
                 const dropZone = document.getElementById('dropZone');
                 const fileInput = document.getElementById('certFile');
 
@@ -252,53 +273,6 @@
                         handleFileChange(e.target.files[0]);
                     }
                 });
-
-                didOpen: () => {
-                    // 🔍 ผูก Autocomplete เข้ากับ SweetAlert Popup
-                    $("#empSearchInput").autocomplete({
-                        appendTo: ".swal2-popup", // ✨ บังคับให้เมนูค้นหาแสดงภายใน Modal
-                        source: function(request, response) {
-                            $.ajax({
-                                url: "<?= base_url('employee/search') ?>",
-                                dataType: "json",
-                                data: { term: request.term },
-                                success: function(data) {
-                                    if (!data.length) {
-                                        // ถ้าไม่พบข้อมูล
-                                        response([{ label: 'ไม่พบข้อมูลบุคลากร', value: '', emp_id: '', cid: '', isNull: true }]);
-                                    } else {
-                                        response(data);
-                                    }
-                                },
-                                error: function() {
-                                    console.error("เกิดข้อผิดพลาดในการดึงข้อมูล Autocomplete");
-                                }
-                            });
-                        },
-                        minLength: 1, // พิมพ์ 1 ตัวอักษรเริ่มค้นทันที
-                        select: function(event, ui) {
-                            if (ui.item.isNull) return false;
-                            
-                            $("#empSearchInput").val(ui.item.fullname);
-                            $("#selected_emp_id").val(ui.item.emp_id);
-                            $("#selected_cid").val(ui.item.cid);
-                            return false;
-                        }
-                    }).autocomplete("instance")._renderItem = function(ul, item) {
-                        if (item.isNull) {
-                            return $("<li>")
-                                .append(`<div class="p-2 text-sm text-slate-400 text-center">ไม่พบข้อมูลที่ค้นหา</div>`)
-                                .appendTo(ul);
-                        }
-
-                        return $("<li>")
-                            .append(`<div class="p-2 text-sm hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-0">
-                                        <span class="font-bold text-slate-800 block">${item.fullname}</span>
-                                        <span class="text-[10px] text-slate-400">CID: ${item.cid}</span>
-                                    </div>`)
-                            .appendTo(ul);
-                    };
-                }
             },
             preConfirm: () => {
                 const empName = $('#empSearchInput').val();
@@ -306,10 +280,19 @@
                 const cid     = $('#selected_cid').val();
                 const file    = $('#certFile')[0].files[0];
 
+                // ❌ 1. ตรวจสอบการกรอกชื่อ / ค้นหา
                 if (!empName) {
                     Swal.showValidationMessage('กรุณาระบุหรือค้นหารายชื่อบุคลากร');
                     return false;
                 }
+
+                // ❌ 2. เงื่อนไขสำคัญ: ตรวจสอบว่าต้องมี CID จากการค้นหาเท่านั้น
+                if (!cid) {
+                    Swal.showValidationMessage('กรุณาเลือกรายชื่อบุคลากรจากรายการค้นหาเพื่อระบุเลข CID ให้ถูกต้อง');
+                    return false;
+                }
+
+                // ❌ 3. ตรวจสอบไฟล์
                 if (!file) {
                     Swal.showValidationMessage('กรุณาแนบไฟล์ใบ Certificate');
                     return false;

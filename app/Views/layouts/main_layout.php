@@ -50,7 +50,7 @@
                         </div>
                         <div class="flex flex-col">
                             <span class="text-base font-bold font-heading text-slate-900 leading-tight">MOPH Digital Training</span>
-                            <span class="text-sm text-slate-500 font-medium">โรงพยาบาลพิบูลมังสาหาร : 10956</span>
+                            <span class="text-sm text-slate-500 font-medium">โรงพยาบาลพิบูลมังสาหาร</span>
                         </div>
                     </a>
 
@@ -102,12 +102,43 @@
                     
                     <?php if (!session()->get('login_id')): ?>
                         <!-- ================= CASE 1: หากไม่พบ Session login_id ให้แสดง "ผู้เยี่ยมชม (Guest)" ================= -->
-                        <div class="flex items-center gap-2 bg-slate-100/80 px-3.5 py-1.5 rounded-2xl border border-slate-200/80">
+                        <div class="hidden md:flex items-center gap-2 bg-slate-100/80 px-3.5 py-1.5 rounded-2xl border border-slate-200/80">
                             <div class="w-7 h-7 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500">
                                 <i class="bi bi-person-fill"></i>
                             </div>
                             <span class="text-sm font-bold text-slate-600 font-heading">ผู้เยี่ยมชม (Guest)</span>
                             <a href="<?= base_url('auth/login.php') ?>" class="ml-1 text-sm text-[#154c9f] hover:underline font-semibold">(เข้าสู่ระบบ)</a>
+                        </div>
+
+                        <!-- 📱 [แสดงเฉพาะจอเล็ก < 768px] Dropdown "เริ่มการอบรม" -->
+                        <div class="relative md:hidden">
+                            <!-- ปุ่มกดเปิด Dropdown -->
+                            <button id="mobileMenuBtn" 
+                                    type="button" 
+                                    class="px-3 py-1.5 bg-[#154c9f] hover:bg-[#0f3877] text-white text-sm font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 font-heading cursor-pointer">
+                                <i class="bi bi-play-circle-fill"></i>
+                                <span>รายงานการอบรม</span>
+                                <i id="mobileMenuArrow" class="bi bi-chevron-down text-[10px] transition-transform duration-200"></i>
+                            </button>
+
+                            <!-- เมนู Dropdown รายการ -->
+                            <div id="mobileDropdownMenu" 
+                                class="hidden absolute right-0 mt-2 w-48 bg-white border border-slate-200/80 rounded-2xl shadow-xl py-1.5 z-50 text-sm font-heading transition-all">
+                                
+                                <a href="<?= base_url('') ?>" class="flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-blue-50 hover:text-[#154c9f] transition-colors">
+                                    <i class="bi bi-graph-up-arrow text-[#51CD66]"></i>
+                                    <span>Dashboard</span>
+                                </a>
+                                <div class="border-t border-slate-100 my-1"></div>
+                                <a href="<?= base_url('courses.php') ?>" class="flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-blue-50 hover:text-[#154c9f] transition-colors">
+                                    <i class="bi bi-journal-bookmark-fill text-[#154c9f]"></i>
+                                    <span>หลักสูตรอบรม</span>
+                                </a>  
+                                <a href="<?= base_url('upload.php') ?>" class="flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-blue-50 hover:text-[#154c9f] transition-colors">
+                                    <i class="bi bi-cloud-arrow-up-fill text-emerald-600"></i>
+                                    <span>ส่งหลักฐานอบรม</span>
+                                </a>
+                            </div>
                         </div>
 
                     <?php else: ?>
@@ -132,18 +163,18 @@
 
                             <!-- Dropdown Menu ส่วน Admin -->
                             <div class="absolute right-0 mt-1 w-56 origin-top-right rounded-2xl bg-white shadow-lg ring-1 ring-black/5 border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 p-1.5 z-50">
-                                <a href="<?= base_url('admin/courses') ?>" class="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-[#154c9f] rounded-xl transition-colors">
+                                <a href="<?= base_url('admin/courses') ?>" class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-[#154c9f] rounded-xl transition-colors">
                                     <i class="bi bi-journal-gear text-slate-400"></i> จัดการหลักสูตรอบรม
                                 </a>
 
                                 <!-- 🧹 เมนูล้างแคชระบบ -->
-                                <button type="button" onclick="handleClearAllCache()" class="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded-xl transition-colors text-left cursor-pointer">
+                                <button type="button" onclick="handleClearAllCache()" class="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 rounded-xl transition-colors text-left cursor-pointer">
                                     <i class="bi bi-trash3 text-amber-500"></i> ล้างแคชระบบ (Clear Cache)
                                 </button>
 
                                 <div class="h-[1px] bg-slate-100 my-1"></div>
                                 
-                                <a href="<?= base_url('auth/logout') ?>" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">
+                                <a href="<?= base_url('auth/logout') ?>" class="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">
                                     <i class="bi bi-box-arrow-right"></i> ออกจากระบบ
                                 </a>
                             </div>
@@ -188,7 +219,7 @@
             </div>
 
             <!-- Body Content -->
-            <div class="p-6 space-y-4 text-xs text-slate-700 bg-white">
+            <div class="p-6 space-y-4 text-sm text-slate-700 bg-white">
                 <!-- Banner Icon -->
                 <div class="rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center p-4">
                     <i class="bi bi-award text-4xl text-[#154c9f]"></i>
@@ -204,15 +235,15 @@
                 </div>
 
                 <!-- ปุ่มเปลี่ยนจาก <a href="..."> เป็น <button onclick="..."> -->
-                <button onclick="handleCourseRedirect()" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl text-xs transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-heading">
+                <button onclick="handleCourseRedirect()" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-heading">
                     <i class="bi bi-journal-check text-sm"></i>
                     <span>เข้าสู่หน้าหลักสูตรการอบรม</span>
-                    <i class="bi bi-arrow-right text-xs"></i>
+                    <i class="bi bi-arrow-right text-sm"></i>
                 </button>
 
                 <!-- ข้อความเน้นย้ำ / หมายเหตุ -->
                 <div class="p-3 bg-blue-50/80 border border-blue-100 rounded-xl text-blue-900 text-[11px] flex items-start gap-2">
-                    <i class="bi bi-info-circle-fill text-[#154c9f] text-xs shrink-0 mt-0.5"></i>
+                    <i class="bi bi-info-circle-fill text-[#154c9f] text-sm shrink-0 mt-0.5"></i>
                     <span>สามารถศึกษาคู่มือการลงทะเบียนใช้งานและรับ ProviderID ได้จากเมนู "เอกสาร" ในแถบด้านบน</span>
                 </div>
             </div>
@@ -224,7 +255,7 @@
                     <span>ไม่ต้องแสดงอีกในวันนี้</span>
                 </label>
 
-                <button onclick="closeWelcomeModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-xs transition-all flex items-center gap-1.5 font-heading">
+                <button onclick="closeWelcomeModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-sm transition-all flex items-center gap-1.5 font-heading">
                     <span>ปิดหน้าต่าง</span>
                 </button>
             </div>
@@ -291,6 +322,8 @@
     </script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <!-- ➕ เพิ่ม Alpine.js ไว้ใน <head> -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <Script>
         /**
          * 🧹 ฟังก์ชันจัดการล้างแคชทั้ง JS (Client) และ PHP (Server)
@@ -345,6 +378,30 @@
             });
         }
     </Script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const btn = document.getElementById("mobileMenuBtn");
+            const menu = document.getElementById("mobileDropdownMenu");
+            const arrow = document.getElementById("mobileMenuArrow");
+
+            if (btn && menu) {
+                // กดปุ่มเพื่อเปิด-ปิด
+                btn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    menu.classList.toggle("hidden");
+                    if (arrow) arrow.classList.toggle("rotate-180");
+                });
+
+                // คลิกพื้นที่อื่นนอก Dropdown ให้ปิดเมนูลดความเกะกะ
+                document.addEventListener("click", function (e) {
+                    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+                        menu.classList.add("hidden");
+                        if (arrow) arrow.classList.remove("rotate-180");
+                    }
+                });
+            }
+        });
+    </script>
     <?= $this->renderSection('page_scripts') ?>
 </body>
 </html>
