@@ -9,10 +9,16 @@ $routes->get('dashboard.php', 'DashboardController::index');
 $routes->get('courses.php', 'CourseController::index');
 $routes->get('upload.php', 'CourseController::upload');
 $routes->post('upload_save.php', 'CourseController::saveUpload');
-$routes->get('emp_search.php', 'CourseController::searchEmployee');
+//$routes->get('emp_search.php', 'CourseController::searchEmployee'); 
 $routes->get('docs/register-manual.php', 'ExternalController::registerManual');
 $routes->get('docs/forgot-provider-id.php', 'ExternalController::providerIdHelp');
 //$routes->get('docs/open-link.php', 'ExternalController::openLink');
+
+$routes->group('data', function ($routes) {
+    $routes->get('emp_search.php', 'Data\ListController::searchEmployee');
+    $routes->get('workgroup_stats.php', 'Data\ListController::getWorkgroupStats');
+});
+
 
 $routes->group('auth', function ($routes) {
     $routes->get('login.php', 'AuthController::login');

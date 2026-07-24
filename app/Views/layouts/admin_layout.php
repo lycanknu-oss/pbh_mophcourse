@@ -2,7 +2,8 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
+    <link rel="icon" type="image/png" href="<?= config('App')->assetURL; ?>img/favicon2.png" />
     <title><?= $title ?? 'ระบบผู้ดูแลระบบ | MOPH Digital Training' ?></title>
     
     <!-- Bootstrap Icons -->

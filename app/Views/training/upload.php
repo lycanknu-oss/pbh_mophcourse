@@ -194,7 +194,7 @@
                     appendTo: ".swal2-popup", // ✨ บังคับให้เมนูแสดงผลใน Modal
                     source: function(request, response) {
                         $.ajax({
-                            url: "<?= base_url('emp_search.php') ?>",
+                            url: "<?= base_url('data/emp_search.php') ?>",
                             dataType: "json",
                             data: { term: request.term },
                             success: function(data) {

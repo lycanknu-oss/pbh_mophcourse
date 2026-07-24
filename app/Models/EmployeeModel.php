@@ -32,4 +32,5 @@ class EmployeeModel extends Model
 
     // ปิด Timestamps อัตโนมัติ (ใช้ d_update ที่ส่งมาจาก Query/Controller)
     protected $useTimestamps = false;
+
 }

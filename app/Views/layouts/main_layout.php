@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="<?= config('App')->assetURL; ?>img/favicon.png" />
+    <link rel="icon" type="image/png" href="<?= config('App')->assetURL; ?>img/favicon3.png" />
 
     <title><?= $title ?? 'MOPH Digital Training System' ?></title>
 
@@ -14,9 +14,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     
+    <!-- 2️⃣ โหลด CSS ของ DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    
     <?= $this->renderSection('page_styles') ?>
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>    
+    <script>
+    // ปิดข้อความแจ้งเตือน Console Warning ของ Tailwind CDN
+    window.tailwind = { config: { suppressDeprecationWarnings: true } };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script> 
     <script src="<?= config('App')->assetURL; ?>js/rendercourse.js"></script>
     <script>
       tailwind.config = {
@@ -323,7 +330,13 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <!-- ➕ เพิ่ม Alpine.js ไว้ใน <head> -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> 
+
+    <!-- 3️⃣ โหลด JS ของ DataTables (ต้องอยู่หลัง jQuery) -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <!-- 4️⃣ (Optional) หากใช้ Responsive Extension -->
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <Script>
         /**
          * 🧹 ฟังก์ชันจัดการล้างแคชทั้ง JS (Client) และ PHP (Server)

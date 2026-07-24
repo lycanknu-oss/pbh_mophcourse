@@ -1,0 +1,153 @@
+
+/* --------------------------------------------------
+   ✨ Custom DataTables Pagination (Modern Glass Theme)
+-------------------------------------------------- */
+
+/* คอนเทนเนอร์หลักของ Pagination */
+.dataTables_wrapper .dataTables_paginate {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.375rem !important; /* เว้นระยะห่างระหว่างปุ่ม */
+    padding-top: 0.5rem !important;
+}
+
+/* สไตล์ปุ่มตัวเลข และ ปุ่ม Previous / Next */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 2.25rem !important;
+    height: 2.25rem !important;
+    padding: 0 0.75rem !important;
+    font-size: 0.75rem !important; /* 12px */
+    font-weight: 600 !important;
+    color: #475569 !important; /* slate-600 */
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important; /* border-slate-200 */
+    border-radius: 0.75rem !important; /* rounded-xl */
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 🔹 Effect เมื่อ Hover (เอาเมาส์ชี้) */
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled) {
+    color: #154c9f !important;
+    background: #eff6ff !important; /* bg-blue-50 */
+    border-color: #bfdbfe !important; /* border-blue-200 */
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 6px -1px rgba(21, 76, 159, 0.1) !important;
+}
+
+/* 🌟 ปุ่มหน้าปัจจุบัน (Current Page) */
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #154c9f 0%, #3b82f6 100%) !important; /* Gradient Blue */
+    border-color: transparent !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(21, 76, 159, 0.3) !important;
+}
+
+/* ❌ ปุ่มที่กดไม่ได้ (Disabled) */
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+    color: #cbd5e1 !important; /* slate-300 */
+    background: #f8fafc !important; /* slate-50 */
+    border-color: #f1f5f9 !important; /* slate-100 */
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ซ่อนจุดประหรือกรอบ Focus สีฟ้าของ Browser */
+.dataTables_wrapper .dataTables_paginate .paginate_button:focus {
+    outline: none !important;
+}
+/* --------------------------------------------------
+   ✨ Custom DataTables Responsive Style (Liquid Glass)
+-------------------------------------------------- */
+
+/* ปุ่มขยาย + / - ด้านหน้าแถว */
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before,
+table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control::before {
+    background-color: #154c9f !important;
+    border: 2px solid #ffffff !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    border-radius: 50% !important;
+    font-weight: bold !important;
+}
+
+/* เมื่อกดเปิดดูรายละเอียด (กล่อง -) */
+table.dataTable.dtr-inline.collapsed > tbody > tr.parent > td.dtr-control::before,
+table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control::before {
+    background-color: #e11d48 !important; /* เปลี่ยนเป็นสีส้ม/แดงเมื่อเปิด */
+}
+
+/* ตกแต่งแถวรายละเอียดที่ขยายออกมา (Child Row) */
+table.dataTable > tbody > tr.child ul.dtr-details {
+    width: 100% !important;
+    padding: 0.75rem 1rem !important;
+    background-color: #f8fafc !important; /* bg-slate-50 */
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0.75rem !important;
+    margin: 0.5rem 0 !important;
+}
+
+table.dataTable > tbody > tr.child ul.dtr-details > li {
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding: 0.5rem 0 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 0.75rem !important;
+}
+
+table.dataTable > tbody > tr.child ul.dtr-details > li:last-child {
+    border-bottom: none !important;
+}
+
+table.dataTable > tbody > tr.child span.dtr-title {
+    font-weight: 700 !important;
+    color: #334155 !important;
+}
+/* --------------------------------------------------
+   ✨ Custom DataTables Header & Sorting Icons
+-------------------------------------------------- */
+
+/* ซ่อนไอคอน Sorting ลายน้ำขีดเดี่ยวเดิมของ DataTables */
+table.dataTable thead .sorting::before,
+table.dataTable thead .sorting::after,
+table.dataTable thead .sorting_asc::before,
+table.dataTable thead .sorting_asc::after,
+table.dataTable thead .sorting_desc::before,
+table.dataTable thead .sorting_desc::after {
+    opacity: 0.25 !important;
+    font-size: 0.7rem !important;
+}
+
+/* เมื่อมีการเลือกจัดเรียง (Active Sort Column) */
+table.dataTable thead .sorting_asc::after,
+table.dataTable thead .sorting_desc::after {
+    opacity: 1 !important;
+    color: #154c9f !important; /* เปลี่ยนลูกศรจัดเรียงเป็นสีธีมหลัก */
+}
+
+/* เอฟเฟกต์ Hover บน Header */
+table.dataTable thead th.sorting:hover {
+    background-color: rgba(239, 246, 255, 0.6) !important; /* bg-blue-50/60 */
+    color: #154c9f !important;
+    transition: all 0.2s ease-in-out;
+}
+
+/* กำหนดขอบมนช่วงมุมซ้าย-ขวาของ Header */
+table.dataTable thead th:first-child {
+    border-top-left-radius: 0.85rem !important;
+    border-bottom-left-radius: 0.85rem !important;
+}
+
+table.dataTable thead th:last-child {
+    border-top-right-radius: 0.85rem !important;
+    border-bottom-right-radius: 0.85rem !important;
+}
