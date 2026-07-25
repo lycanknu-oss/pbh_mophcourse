@@ -5,18 +5,21 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use App\Models\CourseModel;
 use App\Models\EmployeeModel;
+use App\Models\UploadFileModel;
 
 class AdminController extends BaseController
 {
     protected $db;
     protected $courseModel;
     protected $empModel;
+    protected $fileModel;
 
     public function __construct()
     {
         $this->db = \Config\Database::connect();
         $this->courseModel = new CourseModel();
         $this->empModel = new EmployeeModel();
+        $this->fileModel = new UploadFileModel();
     }
 
     private function checkAdminAuth()
@@ -30,12 +33,26 @@ class AdminController extends BaseController
 
     public function dashboard()
     {
+        $employee = new \App\Models\EmployeeModel();
+        $fileuploads = new \App\Models\UploadFileModel();
+        $course = new \App\Models\CourseModel();
+
         if (!$this->checkAdminAuth()) {
             return redirect()->to(base_url('auth/login'))->with('error', 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
         }
 
+        $workgroup = $this->db->query("CALL chkWorkgroup()");
+
+        $data['employee'] = $employee->countAllResults();
+        $data['fileuploads'] = $fileuploads->countCourseFiles();
+        $data['course'] = $course->countAllResults();
+
         $data = [
-            'title' => 'แผงควบคุมผู้ดูแลระบบ | MOPH Admin'
+            'title' => 'แผงควบคุมผู้ดูแลระบบ | MOPH Admin',
+            'data_emp' => $data['employee'],
+            'data_file' => $data['fileuploads'],
+            'data_course' => $data['course'],
+            'workgroupList' => $workgroup->getResultArray()
         ];
 
         return view('admin/dashboard', $data);
@@ -125,6 +142,22 @@ class AdminController extends BaseController
         }
 
         return $this->response->setJSON(['status' => 'error', 'message' => 'ไม่สามารถบันทึกข้อมูลได้']);
+    }
+
+    public function courseDetails()
+    {
+        if (!$this->checkAdminAuth()) {
+            return redirect()->to(base_url('auth/login'))->with('error', 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้');
+        }
+
+        $data['employeeList'] = $this->db->query("CALL getEmployee_UploadCourse()")->getResultArray();
+
+        $data = [
+            'title' => 'รายงานผลการอบรม | MOPH Admin', 
+            'employeeList' => $data['employeeList']
+        ];
+
+         return view('admin/course_reports', $data);
     }
 
     /**
