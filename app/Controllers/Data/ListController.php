@@ -96,6 +96,7 @@ public function getPassedEmployeesByLevel()
         case '2':
         case '3':
             $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", [$level, "N"])->getResultArray();
+<<<<<<< HEAD
             $groupcourse = $db->query("Call getEmployee_HeadQ_Group(?,?)", [$level, "N"])->getResultArray();
             break;
         case '4':
@@ -105,13 +106,26 @@ public function getPassedEmployeesByLevel()
         default:
             $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "N"])->getResultArray();
             $groupcourse = $db->query("Call getEmployee_HeadQ_Group(?,?)", ["NULL", "N"])->getResultArray();
+=======
+            break;
+        case '4':
+            $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "Y"])->getResultArray();
+            break;
+        
+        default:
+            $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "N"])->getResultArray();
+>>>>>>> 57e836121eb369a2b1750a67352f2bdf88aac1ee
             break;
     }
 
     return $this->response->setJSON([
         'status' => 'success',
+<<<<<<< HEAD
         'data'   => $dataemplyee,
         'group'  => $groupcourse
+=======
+        'data'   => $dataemplyee
+>>>>>>> 57e836121eb369a2b1750a67352f2bdf88aac1ee
     ]);
 }
 
