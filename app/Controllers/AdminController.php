@@ -287,6 +287,52 @@ class AdminController extends BaseController
             'data' => $results
         ]);
     }
+
+    /**
+     * 📊 อ่านไฟล์ export_list.csv ส่งกลับเป็น JSON สำหรับ DataTables
+     */
+    public function getExportCsvData()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(405)->setJSON(['status' => 'error', 'message' => 'Method Not Allowed']);
+        }
+
+        $csvPath = WRITEPATH . 'cache/export_list.csv';
+
+        if (!file_exists($csvPath)) {
+            return $this->response->setJSON(['status' => 'success', 'data' => []]);
+        }
+
+        $data = [];
+        if (($handle = fopen($csvPath, 'r')) !== FALSE) {
+            // ข้าม UTF-8 BOM
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                rewind($handle);
+            }
+
+            $headers = fgetcsv($handle);
+            if ($headers !== FALSE) {
+                // Clean headers ให้เป็น key ภาษาอังกฤษ
+                $cleanHeaders = array_map(function($h) {
+                    return strtolower(str_replace([' ', '_'], '', trim($h)));
+                }, $headers);
+
+                while (($row = fgetcsv($handle)) !== FALSE) {
+                    if (count($cleanHeaders) === count($row)) {
+                        $data[] = array_combine($cleanHeaders, $row);
+                    }
+                }
+            }
+            fclose($handle);
+        }
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => $data
+        ]);
+    }
+
     // 🚀 API / Process สำหรับสร้างและดาวน์โหลด Zip
     public function exportZip()
     {

@@ -47,6 +47,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
 
     $routes->get('export/generateCsv', 'AdminController::generateCsv');
     $routes->post('export/exportZip', 'AdminController::exportZip');
+    $routes->get('export/getCsvData', 'AdminController::getExportCsvData');
 
     // 👔 การจัดการข้อมูลบุคลากร (tr_employee Management)
     $routes->get('employees', 'AdminController::employees');

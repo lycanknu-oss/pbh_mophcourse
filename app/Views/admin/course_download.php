@@ -91,7 +91,35 @@
 
         </div>
     </form>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 mt-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <i class="bi bi-file-type-csv text-blue-600 text-lg"></i>
+                รายการข้อมูลล่าสุดในไฟล์แคช (export_list.csv)
+            </h3>
+            <span id="csvRecordCount" class="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium border border-blue-100">
+                0 รายการ
+            </span>
+        </div>
 
+        <!-- Table Container -->
+        <div class="overflow-x-auto">
+            <table id="csvExportTable" class="w-full text-xs text-left text-slate-600">
+                <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                    <tr>
+                        <th class="py-3 px-3 text-center">#</th>
+                        <th class="py-3 px-3">ชื่อ-นามสกุล</th>
+                        <th class="py-3 px-3">ตำแหน่ง</th>
+                        <th class="py-3 px-3">กลุ่มงาน</th>
+                        <th class="py-3 px-3">ฝ่าย/งาน</th>
+                        <th class="py-3 px-3">หลักสูตร</th>
+                        <th class="py-3 px-3 text-center">วันที่อัปโหลด</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <?= $this->endSection() ?>
@@ -126,14 +154,18 @@ $(document).ready(function() {
 </script>
 <script>
     $(document).ready(function() {
-
+    let csvTable;
     // 🔄 ฟังก์ชันส่ง AJAX ไปสร้าง/อัปเดตไฟล์ CSV
+    
+    // 🔄 3. ฟังก์ชันส่ง AJAX ไปประมวลผล generateCsv พร้อม Toast Alert
     function updateExportCsv() {
         const courseType = $('#filter_course_type').val();
         const courseName = $('#filter_course_name').val();
 
-        // ถ้ายังไม่ได้เลือกประเภทหลักสูตร ไม่ต้องส่ง AJAX
         if (!courseType) return;
+
+        // 🔔 ขึ้น Toast SweetAlert สั่งกำลังประมวลผล
+        showLoadingToast('กำลังสร้างและอัปเดตไฟล์ CSV...');
 
         $.ajax({
             url: '<?= base_url("admin/export/generateCsv") ?>',
@@ -145,16 +177,118 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
-                    console.log(`✅ ${response.message} (พบ ${response.count} รายการ)`);
+                    // Reload DataTables อ่านไฟล์ CSV ชุดใหม่
+                    csvTable.ajax.reload(function() {
+                        hideLoadingToast('อัปเดตตารางข้อมูล CSV เรียบร้อยแล้ว');
+                    }, false);
                 } else {
-                    console.error('❌ Error:', response.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: response.message || 'ไม่สามารถประมวลผล CSV ได้'
+                    });
                 }
             },
             error: function(xhr, status, error) {
-                console.error('AJAX CSV Export Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ (' + error + ')'
+                });
             }
         });
     }
+
+    
+
+    // 🔔 1. Helper แสดง Toast SweetAlert2 กำลังประมวลผล
+    function showLoadingToast(titleText = 'กำลังประมวลผลข้อมูล...') {
+        Swal.fire({
+            title: titleText,
+            html: 'กรุณารอสักครู่ ระบบกำลังอัปเดตข้อมูลไฟล์ CSV',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    }
+
+    function hideLoadingToast(successText = null) {
+        if (successText) {
+            Swal.fire({
+                icon: 'success',
+                title: successText,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true
+            });
+        } else {
+            Swal.close();
+        }
+    }
+
+    // 📊 2. Initial DataTables โหลดข้อมูลจาก CSV
+    function initCsvTable() {
+        csvTable = $('#csvExportTable').DataTable({
+            processing: false,
+            responsive: true,
+            ajax: {
+                url: '<?= base_url("admin/export/getCsvData") ?>',
+                type: 'GET',
+                dataSrc: function(json) {
+                    const data = json.data || [];
+                    $('#csvRecordCount').text(`${data.length} รายการ`);
+                    return data;
+                }
+            },
+            columns: [
+                { 
+                    data: null, 
+                    className: 'text-center align-middle',
+                    render: (data, type, row, meta) => meta.row + 1 
+                },
+                { data: 'fullname', defaultContent: '-' },
+                { data: 'position', defaultContent: '-' },
+                { data: 'workgroup', defaultContent: '-' },
+                { data: 'department', defaultContent: '-' },
+                { data: 'coursename', defaultContent: '-' },
+                { data: 'uploaddate', className: 'text-center whitespace-nowrap', defaultContent: '-' }
+            ],
+            language: {
+                emptyTable: "ยังไม่มีข้อมูลในไฟล์ export_list.csv",
+                info: "แสดง _START_ ถึง _END_ จากทั้งหมด _TOTAL_ รายการ",
+                infoEmpty: "แสดง 0 ถึง 0 จากทั้งหมด 0 รายการ",
+                lengthMenu: "แสดง _MENU_ รายการ",
+                search: "ค้นหาใน CSV:",
+                paginate: { previous: "ก่อนหน้า", next: "ถัดไป" }
+            }
+        });
+    }
+
+    // เรียกสร้างตารางครั้งแรก
+    initCsvTable();
+
+    // 🎯 4. Bind Events เมื่อเกิด Activity ใน Form
+    $('#filter_course_type').on('change', function() {
+        updateExportCsv();
+    });
+
+    $('#filter_course_name').on('change', function() {
+        updateExportCsv();
+    });
+
+    // 🎯 5. แสดง Toast เมื่อกดปุ่ม Submit เพื่อดาวน์โหลด ZIP
+    $('#exportForm').on('submit', function() {
+        showLoadingToast('กำลังมัดรวมไฟล์ ZIP และเตรียมการดาวน์โหลด...');
+        // ปล่อยให้ Form Submit ลง ZipArchive ตามปกติ
+        setTimeout(() => {
+            Swal.close();
+        }, 4000); // ปิด Toast อัตโนมัติหลังจากสั่งเริ่มดาวน์โหลด
+    });
+
 
     // 1️⃣ เมื่อเลือก select#filter_course_type
     $('#filter_course_type').on('change', function() {
@@ -212,5 +346,10 @@ $(document).ready(function() {
     });
 
 }); 
+</script>
+<script>
+$(document).ready(function() {
+    
+});
 </script>
 <?= $this->endSection() ?>
