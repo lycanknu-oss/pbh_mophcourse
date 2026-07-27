@@ -78,4 +78,38 @@ class ListController extends BaseController
         ]);
     }
 
+    /**
+ * ⚡ AJAX Method: ดึงรายชื่อผู้ผ่านการอบรมส่งให้ DataTables
+ */
+public function getPassedEmployeesByLevel()
+{
+    $db = \Config\Database::connect();
+
+    if (!$this->request->isAJAX()) {
+        return $this->response->setStatusCode(405)->setJSON(['status' => 'error', 'message' => 'Method Not Allowed']);
+    }
+
+    $level = $this->request->getGet('level');
+
+    switch ($level) {
+        case '1':
+        case '2':
+        case '3':
+            $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", [$level, "N"])->getResultArray();
+            break;
+        case '4':
+            $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "Y"])->getResultArray();
+            break;
+        
+        default:
+            $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "N"])->getResultArray();
+            break;
+    }
+
+    return $this->response->setJSON([
+        'status' => 'success',
+        'data'   => $dataemplyee
+    ]);
+}
+
 }

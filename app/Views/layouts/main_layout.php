@@ -18,10 +18,18 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     
     <?= $this->renderSection('page_styles') ?>
+    <script>
+        // ดึงค่าจาก .env ผ่านฟังก์ชัน env() ของ CI4
+        const hosName = "<?= env('project.hosname', 'โรงพยาบาล') ?>"; 
+        
+        // ตั้งค่าข้อความตำแหน่งตามที่ต้องการ
+        const directorTitle = "ผู้อำนวยการ" + hosName;
+        const subDirectorTitle = "รองผู้อำนวยการ" + hosName;
+    </script>
     <!-- Tailwind CSS -->
     <script>
     // ปิดข้อความแจ้งเตือน Console Warning ของ Tailwind CDN
-    window.tailwind = { config: { suppressDeprecationWarnings: true } };
+        window.tailwind = { config: { suppressDeprecationWarnings: true } };
     </script>
     <script src="https://cdn.tailwindcss.com"></script> 
     <script src="<?= config('App')->assetURL; ?>js/rendercourse.js"></script>

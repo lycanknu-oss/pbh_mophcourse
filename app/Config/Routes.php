@@ -17,6 +17,7 @@ $routes->get('docs/forgot-provider-id.php', 'ExternalController::providerIdHelp'
 $routes->group('data', function ($routes) {
     $routes->get('emp_search.php', 'Data\ListController::searchEmployee');
     $routes->get('workgroup_stats.php', 'Data\ListController::getWorkgroupStats');
+    $routes->get('employees_bylevel.php', 'Data\ListController::getPassedEmployeesByLevel');
 });
 
 
