@@ -160,6 +160,11 @@ class AdminController extends BaseController
          return view('admin/course_reports', $data);
     }
 
+    public function courseDownloads()
+    {
+        return view('admin/course_download');
+    }
+
     /**
      * 🗑️ ลบข้อมูลหลักสูตร (รองรับทั้ง POST 'course_id' และ 'id')
      */
@@ -186,6 +191,109 @@ class AdminController extends BaseController
         }
 
         return $this->response->setJSON(['status' => 'error', 'message' => 'ไม่สามารถลบข้อมูลหลักสูตรได้']);
+    }
+
+    // 🚀 API / Process สำหรับสร้างและดาวน์โหลด Zip
+    public function exportZip()
+    {
+        $request = $this->request->getPost();
+        
+        $courseType = $request['course_type'] ?? '';
+        $courseName = $request['course_name'] ?? '';
+        $workgroup  = $request['workgroup'] ?? '';
+        $department = $request['department'] ?? '';
+
+        // 1️⃣ ดึง Hoscode จาก env หรือ config
+        $hoscode = env('project.hoscode', '10956');
+
+        // 2️⃣ ตั้งชื่อไฟล์ PDF ย่อย
+        $courseText = !empty($courseName) ? $courseName : 'ทุกหลักสูตร';
+        // ทำการ Clean Filename เพื่อป้องกัน Character แปลกปลอม
+        $cleanCourseText = preg_replace('/[^\w\s\d\p{Thai}-]/u', '', $courseText);
+        
+        $pdfFileName = "{$hoscode}_ประเภท{$courseType}_{$cleanCourseText}.pdf";
+
+        // 3️⃣ Query ดึงรายการบุคลากรและไฟล์แนบตาม Filter
+        $db = \Config\Database::connect();
+        $builder = $db->table('employees'); // เปลี่ยนชื่อ Table ตามจริง
+
+        if (!empty($courseType)) $builder->where('course_type', $courseType);
+        if (!empty($courseName)) $builder->where('course_name', $courseName);
+        if (!empty($workgroup))  $builder->where('wg_name', $workgroup);
+        if (!empty($department)) $builder->where('dp_name', $department);
+
+        $results = $builder->get()->getResultArray();
+
+        if (empty($results)) {
+            return redirect()->back()->with('error', 'ไม่พบข้อมูลไฟล์ตามเงื่อนไขที่เลือก');
+        }
+
+        // 4️⃣ สร้าง Zip File ชั่วคราว
+        $zip = new ZipArchive();
+        $tempZipPath = WRITEPATH . 'uploads/' . time() . '_export.zip';
+
+        if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+            return redirect()->back()->with('error', 'ไม่สามารถสร้างไฟล์ Zip ได้');
+        }
+
+        // 5️⃣ วนลูปสร้าง PDF ของแต่ละคนแล้วใส่ลง Zip
+        foreach ($results as $emp) {
+            $empName = preg_replace('/[^\w\s\d\p{Thai}-]/u', '', $emp['fullname'] ?? 'employee');
+            $files   = !empty($emp['file_path']) ? explode(',', $emp['file_path']) : [];
+
+            if (empty($files)) continue;
+
+            // รวมไฟล์ (PNG, JPG, PDF) ของคนนี้ให้เป็น 1 PDF
+            $mergedPdfContent = $this->generateMergedPdfContent($files);
+
+            if ($mergedPdfContent) {
+                // โฟลเดอร์ใน Zip หรือชื่อไฟล์แยกรายบุคคล
+                $entryName = "{$empName}/{$pdfFileName}";
+                $zip->addFromString($entryName, $mergedPdfContent);
+            }
+        }
+
+        $zip->close();
+
+        // 6️⃣ ส่งออกไฟล์ Zip ให้ผู้ใช้ดาวน์โหลด
+        $zipDownloadName = "{$hoscode}_Report_".date('Ymd_His').".zip";
+        return $this->response->download($tempZipPath, null)->setFileName($zipDownloadName);
+    }
+
+    // 📄 Helper Function: รวมรูปภาพ (JPG/PNG) และ PDF ให้เป็น 1 PDF
+    private function generateMergedPdfContent(array $fileList)
+    {
+        // ใช้ FPDF/FPDI หรือ FPDF ธรรมดา
+        // ในที่นี้สมมติโครงสร้างการแปลงรูปภาพ/PDF รวมเป็น Single Stream
+        // สามารถปรับใช้ mPDF / FPDF ตาม Library ที่ท่านติดตั้งไว้
+        
+        $mpdf = new \Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4']);
+
+        foreach ($fileList as $index => $fileName) {
+            $filePath = FCPATH . 'uploads/certificates/' . trim($fileName);
+            if (!file_exists($filePath)) continue;
+
+            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+            if ($index > 0) {
+                $mpdf->AddPage();
+            }
+
+            if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
+                // ถ้ารูปภาพ ให้แสดงเต็มหน้า A4
+                $mpdf->WriteHTML("<div style='text-align:center;'><img src='{$filePath}' style='max-width:100%; max-height:900px;' /></div>");
+            } elseif ($ext === 'pdf') {
+                // ถ้าเป็น PDF ให้ Import หน้า PDF เข้ามา
+                $pageCount = $mpdf->setSourceFile($filePath);
+                for ($i = 1; $i <= $pageCount; $i++) {
+                    if ($i > 1 || $index > 0) $mpdf->AddPage();
+                    $tplId = $mpdf->importPage($i);
+                    $mpdf->useTemplate($tplId);
+                }
+            }
+        }
+
+        return $mpdf->Output('', 'S'); // คืนค่าเป็น String Stream
     }
 
     /**

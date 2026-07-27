@@ -5,10 +5,6 @@ use CodeIgniter\Router\RouteCollection;
 /** @var RouteCollection $routes */
 //$routes->get('/', 'Home::index');
 $routes->get('/', 'DashboardController::index');
-// Route สำหรับบันทึก Event Log ทั่วทั้งระบบ
-$routes->post('api/log-activity.php', 'DashboardController::logUserActivity'); 
-// หรือชี้ไปที่ Controller หลักที่คุณใช้งาน เช่น 'Home::logUserActivity'
-
 $routes->get('dashboard.php', 'DashboardController::index');
 $routes->get('courses.php', 'CourseController::index');
 $routes->get('upload.php', 'CourseController::upload');
@@ -21,6 +17,7 @@ $routes->get('docs/forgot-provider-id.php', 'ExternalController::providerIdHelp'
 $routes->group('data', function ($routes) {
     $routes->get('emp_search.php', 'Data\ListController::searchEmployee');
     $routes->get('workgroup_stats.php', 'Data\ListController::getWorkgroupStats');
+    $routes->get('employees_bylevel.php', 'Data\ListController::getPassedEmployeesByLevel');
 });
 
 
@@ -45,7 +42,10 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('courses', 'AdminController::courses');
     $routes->post('saveCourse', 'AdminController::saveCourse');
     $routes->post('deleteCourse', 'AdminController::deleteCourse');
-    $routes->get('course-reports', 'AdminController::courseDetails/$1');
+    $routes->get('course-reports', 'AdminController::courseDetails');
+    $routes->get('course-export', 'AdminController::courseDownloads');
+
+    $routes->post('export/exportZip', 'AdminController::exportZip');
 
     // 👔 การจัดการข้อมูลบุคลากร (tr_employee Management)
     $routes->get('employees', 'AdminController::employees');
@@ -59,4 +59,6 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
 
     // 📊 การจัดการข้อมูลสถิติ (Statistics Managemen
     $routes->post('clear-cache.php', 'AdminController::clearCacheSystem');
+
+
 });
