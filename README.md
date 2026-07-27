@@ -1,69 +1,168 @@
-# CodeIgniter 4 Application Starter
+📊 Training Dashboard & Evaluation System
+ระบบรายงานผลสัมฤทธิ์และติดตามการส่งหลักฐานการฝึกอบรมบุคลากร
 
-## What is CodeIgniter?
+เว็บแอปพลิเคชันสำหรับจัดเก็บ แสดงผลสถิติ และติดตามผู้ผ่านการฝึกอบรมแบบ Real-time ตามระดับกลุ่มหลักสูตร พัฒนาด้วย CodeIgniter 4, DataTables (AJAX) และ Tailwind CSS
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+🌟 ฟีเจอร์หลัก (Key Features)
+Dashboard Overview & KPIs:
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+สรุปสถิติตัวเลขบุคลากรทั้งหมด, ผู้ผ่านการอบรม, หลักสูตรที่เปิด และร้อยละตัวชี้วัดสะสม
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+Progress Bar ความก้าวหน้าการส่งหลักฐานเทียบเป้าหมายขั้นต่ำ (80%) และเป้าหมายสูงสุด (100%)
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+Data Visualization (Chart.js):
 
-## Installation & updates
+สัดส่วนระดับการพัฒนาอบรม (Doughnut Chart 70%)
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+สถิติผลการอบรมจำแนกตามรายหน่วยงาน (Progress List 30%)
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+Dynamic Tab List & AJAX DataTables (5 Level Tabs):
 
-## Setup
+แยกตารางรายชื่อออกเป็น 5 ระดับหลักสูตร (1: ผู้อำนวยการ, 2: รองผู้อำนวยการ/ผู้รับมอบหมาย, 3: หัวหน้ากลุ่มงาน, 4: เจ้าหน้าที่ IT, 5: บุคลากรทั่วไป)
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+โหลดข้อมูลตารางผ่าน AJAX แบบ dynamic ไม่ต้อง reload หน้าเว็บ
 
-## Important Change with index.php
+Custom Position & Department Logic:
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+ดึงชื่อโรงพยาบาลจาก .env (project.hosname) มาต่อท้ายตำแหน่งอัตโนมัติ
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+Level 1: ตำแหน่ง = ผู้อำนวยการ + project.hosname, ฝ่าย/กลุ่มงาน = ""
 
-**Please** read the user guide for a better explanation of how CI4 works!
+Level 2: ตำแหน่ง = รองผู้อำนวยการ + project.hosname, ฝ่าย/กลุ่มงาน = wg_name
 
-## Repository Management
+Level 3: ตำแหน่ง = หัวหน้ากลุ่มงาน + wg_name
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+File Attachment Handling: ตรวจสอบและแสดงปุ่มเปิดดูวุฒิบัตร/หลักฐาน PDF (file_path) พร้อมป้ายสถานะการอัปโหลด
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+🛠 Tech Stack & Dependencies
+Backend: CodeIgniter 4 (PHP 8.1+)
 
-## Server Requirements
+Database: MariaDB / MySQL 5.7+
 
-PHP version 8.2 or higher is required, with the following extensions installed:
+Frontend Framework & Styling:
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+Tailwind CSS v3 (Glassmorphism UI Theme)
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - The end of life date for PHP 8.1 was December 31, 2025.
-> - If you are still using below PHP 8.2, you should upgrade immediately.
-> - The end of life date for PHP 8.2 will be December 31, 2026.
+Bootstrap Icons
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+JavaScript Libraries:
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+jQuery
+
+DataTables v1.13+ (Client/AJAX Processing)
+
+Chart.js v4
+
+⚙️ การตั้งค่าและติดตั้ง (Installation & Configuration)
+1. ความต้องการของระบบ (Prerequisites)
+PHP >= 8.1 (รองรับ extension mysqli, intl, mbstring, json)
+
+Composer
+
+MariaDB / MySQL Server
+
+2. ตั้งค่าไฟล์สภาพแวดล้อม (.env)
+คัดลอกไฟล์ env เป็น .env แล้วตั้งค่าการเชื่อมต่อฐานข้อมูลและชื่อหน่วยงาน:
+
+Ini, TOML
+# Application Setup
+CI_ENVIRONMENT = development
+
+# Database Setup
+database.default.hostname = localhost
+database.default.database = db_training
+database.default.username = root
+database.default.password = 
+database.default.DBDriver = MySQLi
+database.default.port = 3306
+
+# Project Configuration
+project.hosname = "โรงพยาบาลโพธิ์ไทร"
+🗄️ Database Structure & Query Example
+ตารางหลักที่ใช้งานในระบบ: tr_employee, tr_workgroup, tr_department, tr_uploadfile, tr_course
+
+SQL Query สำหรับดึงข้อมูลส่ง AJAX (Controller)
+SQL
+SELECT
+  emp.emp_id,
+  emp.hcode,
+  emp.cid,
+  CONCAT(emp.prefix_name, emp.fullname) AS fname,
+  emp.position,
+  dp.dp_name,
+  wg.wg_name,
+  fu.file_id,
+  fu.file_path,
+  GROUP_CONCAT(DISTINCT fu.course_name SEPARATOR ', ') AS course_name,
+  fu.course_type,
+  MAX(fu.upload_date) AS upload_date
+FROM
+  tr_employee emp
+  LEFT JOIN tr_workgroup wg ON wg.wg_id = emp.workgroup_id
+  LEFT JOIN tr_department dp ON dp.dp_id = emp.department_id
+  LEFT JOIN (
+    SELECT
+      fi.file_id,
+      fi.cid,
+      fi.file_name AS file_path,
+      fi.d_update AS upload_date,
+      cr.course_id,
+      cr.course_name,
+      cr.course_type
+    FROM
+      tr_uploadfile fi
+      LEFT JOIN tr_course cr ON cr.course_id = fi.course_id
+  ) fu ON fu.cid = emp.cid
+WHERE
+  ( CASE 
+      WHEN dataworkgroup NOT IN(1,2,3,4) THEN emp.workgroup_hq IS NULL
+      ELSE emp.workgroup_hq = dataworkgroup 
+    END )
+  AND department_hq = datadepart
+GROUP BY
+  emp.emp_id, emp.hcode, emp.prefix_name, emp.fullname, emp.position, dp.dp_name, wg.wg_name
+ORDER BY
+  emp.workgroup_id ASC, emp.department_id ASC;
+⚡ API Endpoint (AJAX Request)
+GET /dashboard/getPassedEmployeesByLevel
+ดึงข้อมูลรายชื่อผู้ผ่านการอบรมแยกตามระดับหลักสูตรสำหรับ DataTables
+
+Query Parameters:
+
+level (int): 1 | 2 | 3 | 4 | 5
+
+JSON Response Structure Example:
+
+JSON
+{
+  "status": "success",
+  "data": [
+    {
+      "emp_id": "1",
+      "cid": "3340100XXXXXX",
+      "fname": "นายสมชาย ใจดี",
+      "position": "นักจัดการงานทั่วไปชำนาญการ",
+      "dp_name": "กลุ่มงานบริหารทั่วไป",
+      "wg_name": "งานสารสนเทศ",
+      "course_name": "Cybersecurity & Public Health Data Governance",
+      "upload_date": "2026-03-20 10:30:00",
+      "file_path": "cert_101.pdf"
+    }
+  ]
+}
+📂 Project Structure
+Plaintext
+app/
+├── Controllers/
+│   └── Dashboard.php                 # Controller หลัก และ AJAX Endpoint
+├── Views/
+│   ├── dashboard.php                 # Main Dashboard View (UI, Tabs, Chart & DataTables Script)
+│   └── layouts/
+│       └── main_layout.php           # Master Layout
+public/
+├── uploads/
+│   └── certificates/                 # โฟลเดอร์เก็บไฟล์เอกสาร/วุฒิบัตรแนบ (.pdf)
+└── css/
+    └── dashboard.css                 # Custom Styling
+📄 License
+ระบบนี้จัดทำขึ้นเพื่อใช้งานภายในหน่วยงาน สิทธิในซอร์สโค้ดและการใช้งานเป็นไปตามข้อกำหนดขององค์ก

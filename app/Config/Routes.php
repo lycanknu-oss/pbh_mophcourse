@@ -5,6 +5,10 @@ use CodeIgniter\Router\RouteCollection;
 /** @var RouteCollection $routes */
 //$routes->get('/', 'Home::index');
 $routes->get('/', 'DashboardController::index');
+// Route สำหรับบันทึก Event Log ทั่วทั้งระบบ
+$routes->post('api/log-activity.php', 'DashboardController::logUserActivity'); 
+// หรือชี้ไปที่ Controller หลักที่คุณใช้งาน เช่น 'Home::logUserActivity'
+
 $routes->get('dashboard.php', 'DashboardController::index');
 $routes->get('courses.php', 'CourseController::index');
 $routes->get('upload.php', 'CourseController::upload');

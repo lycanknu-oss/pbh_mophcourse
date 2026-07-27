@@ -18,6 +18,60 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     
     <?= $this->renderSection('page_styles') ?>
+    <!-- 📊 Global Auto Logger Script -->
+    <script>
+    (function() {
+        'use strict';
+
+        document.addEventListener('click', function(e) {
+            // 1. หา Element ที่มีนัยสำคัญในการคลิก (ปุ่ม, ลิงก์, แท็บ, อินพุต, เมนู)
+            const targetEl = e.target.closest('button, a, input, select, textarea, .tab-btn, [data-level], tr, nav a, .btn') || e.target;
+            
+            // กรองไม่บันทึกการคลิกพื้นที่ว่างเปล่าทั่วไป (ถ้าต้องการบันทึกเฉพาะจุดที่ปฏิสัมพันธ์ได้)
+            const tagName = targetEl.tagName.toLowerCase();
+            
+            // 2. รวบรวมข้อมูลบริบทของการคลิก
+            const elementId = targetEl.id ? `#${targetEl.id}` : '';
+            const innerText = targetEl.innerText ? targetEl.innerText.trim().replace(/\s+/g, ' ').substring(0, 60) : '';
+            const hrefAttr  = targetEl.getAttribute('href') || '';
+            
+            const eventType   = 'AUTO_CLICK';
+            const eventTitle  = `Click <${tagName}> ${elementId} [${innerText || 'Icon/Element'}]`;
+            
+            const eventDetail = JSON.stringify({
+                tag: tagName,
+                id: targetEl.id || null,
+                class: targetEl.className || null,
+                text: innerText || null,
+                href: hrefAttr || null,
+                data_level: targetEl.getAttribute('data-level') || null,
+                page_title: document.title,
+                page_url: window.location.href
+            });
+
+            // 3. เตรียม Data สำหรับส่งไปยัง Server
+            const formData = new FormData();
+            formData.append('event_type', eventType);
+            formData.append('event_title', eventTitle);
+            formData.append('event_detail', eventDetail);
+            formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+            // 4. ส่งข้อมูลด้วย sendBeacon (ทำงานเบื้องหลัง ประสิทธิภาพสูง หน้าเว็บไม่หน่วง)
+            const logEndpoint = '<?= base_url("api/log-activity.php") ?>';
+
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(logEndpoint, formData);
+            } else {
+                // Fallback สำหรับเบราว์เซอร์เก่า
+                fetch(logEndpoint, {
+                    method: 'POST',
+                    body: formData,
+                    keepalive: true
+                }).catch(err => console.error('Log error:', err));
+            }
+        }, true); // ใช้ Event Capturing (true) เพื่อดักจับ Event คลิกในทุกระดับของ DOM
+    })();
+    </script>
     <!-- Tailwind CSS -->
     <script>
     // ปิดข้อความแจ้งเตือน Console Warning ของ Tailwind CDN
