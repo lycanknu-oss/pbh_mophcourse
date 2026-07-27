@@ -45,6 +45,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('courses', 'AdminController::courses');
     $routes->post('saveCourse', 'AdminController::saveCourse');
     $routes->post('deleteCourse', 'AdminController::deleteCourse');
+    $routes->get('course-reports', 'AdminController::courseDetails/$1');
 
     // 👔 การจัดการข้อมูลบุคลากร (tr_employee Management)
     $routes->get('employees', 'AdminController::employees');

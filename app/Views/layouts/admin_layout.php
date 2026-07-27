@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
 
-    <!-- 📊 DataTables CSS (Tailwind integration / Modern Styling) -->
+    <!-- 📊 DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 
@@ -54,6 +54,10 @@
         }
         table.dataTable.no-footer {
             border-bottom: 1px solid #e2e8f0 !important;
+        }
+        /* Custom Arrow for Submenu Accordion */
+        details[open] .dropdown-chevron {
+            transform: rotate(180deg);
         }
     </style>
     <!-- Tailwind CSS CDN -->
@@ -124,11 +128,40 @@
                         <span>หน้าแรก (ภาพรวม)</span>
                     </a>
 
-                    <!-- 📚 เมนูข้อมูลหลักสูตรอบรม -->
-                    <a href="<?= base_url('admin/courses') ?>" class="admin-nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/10 text-white/80 <?= current_url() == base_url('admin/courses') ? 'bg-white/20 text-white font-semibold' : '' ?>">
-                        <i class="bi bi-journal-bookmark text-lg"></i>
-                        <span>ข้อมูลหลักสูตรอบรม</span>
-                    </a>
+                    <?php 
+                        // เช็กว่าอยู่ใน Submenu ตัวไหนของหลักสูตรอบรมหรือไม่ เพื่อเปิด Dropdown ค้างไว้
+                        $isCourseActive = (strpos(current_url(), 'admin/courses') !== false || strpos(current_url(), 'admin/reports') !== false || strpos(current_url(), 'admin/export') !== false);
+                    ?>
+
+                    <!-- 📚 Dropdown: จัดการหลักสูตรอบรม -->
+                    <details class="group border-none" <?= $isCourseActive ? 'open' : '' ?>>
+                        <summary class="admin-nav-item list-none flex items-center justify-between px-4 py-3 rounded-xl transition-all hover:bg-white/10 text-white/80 cursor-pointer select-none <?= $isCourseActive ? 'bg-white/10 text-white font-semibold' : '' ?>">
+                            <div class="flex items-center gap-3">
+                                <i class="bi bi-journal-bookmark text-lg"></i>
+                                <span>จัดการหลักสูตรอบรม</span>
+                            </div>
+                            <i class="bi bi-chevron-down text-xs transition-transform duration-200 dropdown-chevron"></i>
+                        </summary>
+                        
+                        <!-- เมนูย่อย (Submenu) -->
+                        <div class="pl-9 pr-2 py-1 space-y-1 text-xs bg-black/10 rounded-lg mt-1">
+                            <!-- 1. ข้อมูลหลักสูตรอบรม -->
+                            <a href="<?= base_url('admin/courses') ?>" class="flex items-center text-sm gap-2 px-3 py-2 rounded-lg transition-all text-white/70 hover:text-white hover:bg-white/10 <?= current_url() == base_url('admin/courses') ? 'bg-white/20 text-white font-semibold' : '' ?>">
+                                <i class="bi bi-box-arrow-in-up-right"></i>
+                                <span>ข้อมูลหลักสูตรอบรม</span>
+                            </a>
+                            <!-- 2. รายงานผลการอบรม -->
+                            <a href="<?= base_url('admin/course-reports') ?>" class="flex items-center text-sm gap-2 px-3 py-2 rounded-lg transition-all text-white/70 hover:text-white hover:bg-white/10 <?= current_url() == base_url('admin/course-reports') ? 'bg-white/20 text-white font-semibold' : '' ?>">
+                                <i class="bi bi-box-arrow-in-up-right"></i>
+                                <span>รายงานผลการอบรม</span>
+                            </a>
+                            <!-- 3. ส่งออกผลการอบรม -->
+                            <a href="<?= base_url('admin/export') ?>" class="flex items-center text-sm gap-2 px-3 py-2 rounded-lg transition-all text-white/70 hover:text-white hover:bg-white/10 <?= current_url() == base_url('admin/export') ? 'bg-white/20 text-white font-semibold' : '' ?>">
+                                <i class="bi bi-box-arrow-in-up-right"></i>
+                                <span>ส่งออกผลการอบรม</span>
+                            </a>
+                        </div>
+                    </details>
 
                     <!-- 👔 เมนูข้อมูลบุคลากร -->
                     <a href="<?= base_url('admin/employees') ?>" class="admin-nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/10 text-white/80 <?= current_url() == base_url('admin/employees') ? 'bg-white/20 text-white font-semibold' : '' ?>">
@@ -171,8 +204,7 @@
 
     </div>
 
-    <!-- สคริปต์ jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- สคริปต์ jQuery & DataTables -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
@@ -233,7 +265,6 @@
     </script>
     <!-- ⚡ สคริปต์ตรวจเช็ก JWT Token & SweetAlert2 Logout -->
     <script>
-        // 1. ฟังก์ชันถอดรหัส Payload ของ JWT
         function parseJwt(token) {
             try {
                 const base64Url = token.split('.')[1];
@@ -248,7 +279,6 @@
             }
         }
 
-        // 2. ฟังก์ชันตรวจสอบความถูกต้องของ JWT Token ฝั่ง Client
         function verifyAdminToken() {
             const token = localStorage.getItem('jwt_token');
 
@@ -283,7 +313,6 @@
             });
         }
 
-        // 3. ฟังก์ชันกดยืนยันออกจากระบบด้วย SweetAlert2
         function confirmLogout() {
             Swal.fire({
                 title: 'ยืนยันการออกจากระบบ?',

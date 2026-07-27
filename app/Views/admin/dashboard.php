@@ -22,8 +22,8 @@
         <!-- การ์ด 1: จำนวนผู้ใช้งานระบบ -->
         <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
-                <p class="text-xs font-medium text-gray-500">ผู้ใช้งานในระบบ (tr_staff)</p>
-                <h4 class="text-2xl font-bold text-gray-900 mt-1"><?= count($staffs ?? []) ?> <span class="text-xs font-normal text-gray-400">คน</span></h4>
+                <p class="text-xs font-medium text-gray-500">ผู้ใช้งานในระบบ</p>
+                <h4 class="text-2xl font-bold text-gray-900 mt-1"><?= $data_emp ?? 0 ?> <span class="text-xs font-normal text-gray-400">คน</span></h4>
             </div>
             <div class="w-12 h-12 bg-blue-50 text-[#154c9f] rounded-2xl flex items-center justify-center text-xl font-bold">
                 <i class="bi bi-people-fill"></i>
@@ -33,8 +33,8 @@
         <!-- การ์ด 2: จำนวนบุคลากรทั้งหมด -->
         <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
-                <p class="text-xs font-medium text-gray-500">บุคลากรทั้งหมด (tr_employee)</p>
-                <h4 class="text-2xl font-bold text-teal-600 mt-1"><?= count($employees ?? []) ?> <span class="text-xs font-normal text-gray-400">คน</span></h4>
+                <p class="text-xs font-medium text-gray-500">ผ่านการอบรม</p>
+                <h4 class="text-2xl font-bold text-teal-600 mt-1"><?= $data_file ?? 0 ?> <span class="text-xs font-normal text-gray-400">คน</span></h4>
             </div>
             <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center text-xl font-bold">
                 <i class="bi bi-person-badge-fill"></i>
@@ -45,7 +45,7 @@
         <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div>
                 <p class="text-xs font-medium text-gray-500">กลุ่มงาน (Workgroups)</p>
-                <h4 class="text-2xl font-bold text-indigo-600 mt-1"><?= count($workgroups ?? []) ?> <span class="text-xs font-normal text-gray-400">กลุ่ม</span></h4>
+                <h4 class="text-2xl font-bold text-indigo-600 mt-1"><?= count($workgroupList ?? []) ?> <span class="text-xs font-normal text-gray-400">กลุ่ม</span></h4>
             </div>
             <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-xl font-bold">
                 <i class="bi bi-diagram-3-fill"></i>
