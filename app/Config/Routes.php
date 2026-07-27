@@ -45,6 +45,7 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('course-reports', 'AdminController::courseDetails');
     $routes->get('course-export', 'AdminController::courseDownloads');
 
+    $routes->get('export/generateCsv', 'AdminController::generateCsv');
     $routes->post('export/exportZip', 'AdminController::exportZip');
 
     // 👔 การจัดการข้อมูลบุคลากร (tr_employee Management)

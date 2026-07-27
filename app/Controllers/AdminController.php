@@ -6,6 +6,7 @@ use App\Controllers\BaseController;
 use App\Models\CourseModel;
 use App\Models\EmployeeModel;
 use App\Models\UploadFileModel;
+use ZipArchive; // 👈 เพิ่มบรรทัดนี้
 
 class AdminController extends BaseController
 {
@@ -192,7 +193,100 @@ class AdminController extends BaseController
 
         return $this->response->setJSON(['status' => 'error', 'message' => 'ไม่สามารถลบข้อมูลหลักสูตรได้']);
     }
+    /**
+     * 📝 สร้าง/อัปเดตไฟล์ CSV ตามเงื่อนไข filter_course_type และ filter_course_name
+     */
+    public function generateCsv()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(405)->setJSON(['status' => 'error', 'message' => 'Method Not Allowed']);
+        }
 
+        $courseType = $this->request->getGet('course_type');
+        $courseName = $this->request->getGet('course_name');
+
+        // กำหนดค่าเริ่มต้นเพื่อป้องกัน Undefined Variable
+        $results = [];
+
+        switch ($courseType) {
+            case '1':
+            case '2':
+            case '3':
+                $departType = "N";
+                break;
+            case '4':
+                $courseType = 5;
+                $departType = "Y";
+                break;
+            default:
+                $courseType = 5;
+                $departType = "N";
+                break;
+        }
+        //$departType = ($courseType < 4) ? "N" : "Y";
+
+        // 1. Query ข้อมูลตามเงื่อนไข
+        $db = \Config\Database::connect();
+
+        if (!empty($courseType) && empty($courseName)) {
+            $results = $db->query('CALL getEmplyee_HeadQ(?,?)', [$courseType, $departType])->getResultArray();
+        } elseif (!empty($courseType) && !empty($courseName)) {
+            $results = $db->query('CALL getEmployee_HeadQ_LikeCourse(?,?,?)', [$courseType, $departType, $courseName])->getResultArray();
+        }
+
+        // 2. กำหนด Path และสร้างโฟลเดอร์ cache หากยังไม่มี
+        $dirPath = WRITEPATH . 'cache';
+        if (!is_dir($dirPath)) {
+            mkdir($dirPath, 0777, true);
+        }
+
+        $filePath = $dirPath . '/export_list.csv';
+
+        // 3. เปิดไฟล์แบบเขียนใหม่ (โหมด 'w' จะเคลียร์เนื้อหาเดิมให้อัตโนมัติโดยไม่ต้องสั่ง unlink)
+        $file = @fopen($filePath, 'w');
+
+        if ($file === false) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'ไม่สามารถเขียนไฟล์ CSV ได้ กรุณาเช็กสิทธิ์ Folder writable/cache'
+            ]);
+        }
+
+        // 4. เขียน UTF-8 BOM เพื่อให้ภาษาไทยใน Excel ไม่เป็นภาษาต่างดาว
+        fputs($file, "\xEF\xBB\xBF");
+
+        // 5. เขียน Header เพียงชุดเดียว
+        fputcsv($file, ['ID', 'Full Name', 'Position', 'Workgroup', 'Department', 'Course ID', 'Course Name', 'file_id', 'file_directory', 'file_name', 'Upload Date']);
+
+        // 6. เขียนข้อมูลบุคลากรลง CSV
+        foreach ($results as $row) {
+            if($row['course_id'] !=''):
+            fputcsv($file, [
+                $row['cid'] ?? '',
+                $row['fname'] ?? '',
+                $row['position'] ?? '',
+                $row['wg_name'] ?? '',
+                $row['dp_name'] ?? '',
+                $row['course_id'] ?? '',
+                $row['course_name'] ?? '',
+                $row['file_id'] ?? '',
+                $row['file_dir'] ?? '',
+                $row['file_path'] ?? '',
+                $row['upload_date'] ?? ''
+            ]);
+            endif;
+        }
+
+        // 7. ปิดไฟล์หลังจากเขียนข้อมูลทั้งหมดเสร็จสิ้น
+        fclose($file);
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'message' => 'อัปเดตไฟล์ export_list.csv สำเร็จ ',
+            'count' => count($results),
+            'data' => $results
+        ]);
+    }
     // 🚀 API / Process สำหรับสร้างและดาวน์โหลด Zip
     public function exportZip()
     {
@@ -200,63 +294,101 @@ class AdminController extends BaseController
         
         $courseType = $request['course_type'] ?? '';
         $courseName = $request['course_name'] ?? '';
-        $workgroup  = $request['workgroup'] ?? '';
-        $department = $request['department'] ?? '';
 
         // 1️⃣ ดึง Hoscode จาก env หรือ config
         $hoscode = env('project.hoscode', '10956');
 
         // 2️⃣ ตั้งชื่อไฟล์ PDF ย่อย
         $courseText = !empty($courseName) ? $courseName : 'ทุกหลักสูตร';
-        // ทำการ Clean Filename เพื่อป้องกัน Character แปลกปลอม
         $cleanCourseText = preg_replace('/[^\w\s\d\p{Thai}-]/u', '', $courseText);
-        
         $pdfFileName = "{$hoscode}_ประเภท{$courseType}_{$cleanCourseText}.pdf";
 
-        // 3️⃣ Query ดึงรายการบุคลากรและไฟล์แนบตาม Filter
-        $db = \Config\Database::connect();
-        $builder = $db->table('employees'); // เปลี่ยนชื่อ Table ตามจริง
+        // 3️⃣ อ่านข้อมูลจากไฟล์ cache/export_list.csv
+        $csvPath = WRITEPATH . 'cache/export_list.csv';
 
-        if (!empty($courseType)) $builder->where('course_type', $courseType);
-        if (!empty($courseName)) $builder->where('course_name', $courseName);
-        if (!empty($workgroup))  $builder->where('wg_name', $workgroup);
-        if (!empty($department)) $builder->where('dp_name', $department);
+        if (!file_exists($csvPath)) {
+            return redirect()->back()->with('error', 'ไม่พบไฟล์ข้อมูลแคช กรุณาทำการกรองข้อมูลใหม่อีกครั้ง');
+        }
 
-        $results = $builder->get()->getResultArray();
+        $results = [];
+        if (($handle = fopen($csvPath, 'r')) !== FALSE) {
+            // ข้าม UTF-8 BOM (ถ้ามี)
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                rewind($handle);
+            }
+
+            // ดึง Header มาจับคู่ Key กับ Value
+            $headers = fgetcsv($handle);
+
+            if ($headers !== FALSE) {
+                // แปลง Header เป็น lowercase หรือชื่อคีย์ที่ใช้งานง่าย (เช่น 'full name' -> 'fullname', 'file path' -> 'file_path')
+                $cleanHeaders = array_map(function($header) {
+                    $h = strtolower(trim($header));
+                    $h = str_replace([' ', '_'], '', $h);
+                    return $h;
+                }, $headers);
+
+                while (($row = fgetcsv($handle)) !== FALSE) {
+                    if (count($cleanHeaders) === count($row)) {
+                        $results[] = array_combine($cleanHeaders, $row);
+                    }
+                }
+            }
+            fclose($handle);
+        }
 
         if (empty($results)) {
-            return redirect()->back()->with('error', 'ไม่พบข้อมูลไฟล์ตามเงื่อนไขที่เลือก');
+            return redirect()->back()->with('error', 'ไม่พบข้อมูลไฟล์ใน CSV ตามเงื่อนไข');
         }
 
         // 4️⃣ สร้าง Zip File ชั่วคราว
         $zip = new ZipArchive();
-        $tempZipPath = WRITEPATH . 'uploads/' . time() . '_export.zip';
+        $tempDir = WRITEPATH . 'uploads';
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0777, true);
+        }
+
+        $tempZipPath = $tempDir . '/' . time() . '_export.zip';
 
         if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
             return redirect()->back()->with('error', 'ไม่สามารถสร้างไฟล์ Zip ได้');
         }
 
-        // 5️⃣ วนลูปสร้าง PDF ของแต่ละคนแล้วใส่ลง Zip
-        foreach ($results as $emp) {
-            $empName = preg_replace('/[^\w\s\d\p{Thai}-]/u', '', $emp['fullname'] ?? 'employee');
-            $files   = !empty($emp['file_path']) ? explode(',', $emp['file_path']) : [];
+        // 5️⃣ วนลูปอ่านข้อมูลบุคลากรจาก CSV แล้วสร้าง PDF ใส่ลง Zip 
+            foreach ($results as $emp) {
+                $fullnameRaw = $emp['fullname'] ?? $emp['full name'] ?? 'employee';
+                $empName = preg_replace('/[^\w\s\d\p{Thai}-]/u', '', $fullnameRaw);
+                
+                // 📁 ดึง path ไฟล์จากคอลัมน์ใน CSV (ผสม file_directory + file_name)
+                $fileDir  = $emp['filedirectory'] ?? $emp['file_directory'] ?? '';
+                $fileName = $emp['filename'] ?? $emp['file_name'] ?? '';
 
-            if (empty($files)) continue;
+                // สร้าง Full Absolute Path
+                $files = [];
+                if (!empty($fileDir) && !empty($fileName)) {
+                    // ต่อ path เช่น WRITEPATH . 'uploads/' . directory . '/' . filename
+                    $fullFilePath = FCPATH . rtrim($fileDir, '/') . '/' . $fileName; 
+                    if (file_exists($fullFilePath)) {
+                        $files[] = $fullFilePath;
+                    }
+                }
 
-            // รวมไฟล์ (PNG, JPG, PDF) ของคนนี้ให้เป็น 1 PDF
-            $mergedPdfContent = $this->generateMergedPdfContent($files);
+                if (empty($files)) continue;
 
-            if ($mergedPdfContent) {
-                // โฟลเดอร์ใน Zip หรือชื่อไฟล์แยกรายบุคคล
-                $entryName = "{$empName}/{$pdfFileName}";
-                $zip->addFromString($entryName, $mergedPdfContent);
+                // รวมไฟล์ (PNG, JPG, PDF) ของคนนี้ให้เป็น 1 PDF
+                $mergedPdfContent = $this->generateMergedPdfContent($files);
+
+                if ($mergedPdfContent) {
+                    $entryName = "{$empName}/{$pdfFileName}";
+                    $zip->addFromString($entryName, $mergedPdfContent);
+                }
             }
-        }
 
         $zip->close();
 
         // 6️⃣ ส่งออกไฟล์ Zip ให้ผู้ใช้ดาวน์โหลด
-        $zipDownloadName = "{$hoscode}_Report_".date('Ymd_His').".zip";
+        $zipDownloadName = "{$hoscode}_Report_" . date('Ymd_His') . ".zip";
         return $this->response->download($tempZipPath, null)->setFileName($zipDownloadName);
     }
 

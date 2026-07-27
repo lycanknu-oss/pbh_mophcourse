@@ -9,12 +9,20 @@ use App\Models\UploadFileModel; // 👈 เพิ่มบรรทัดนี�
 
 class ListController extends BaseController
 {
+    // 🟢 ประกาศ Property ไว้ด้านบนหัว Class
+    protected $db;
+    protected $courseModel;
+    protected $uploadModel;
+    protected $employeeModel;
+    
     public function __construct()
     {
+        // กำหนดค่าตามเดิม
         $this->db = \Config\Database::connect();
         $this->courseModel = new CourseModel();
         $this->uploadModel = new UploadFileModel();
         $this->employeeModel = new EmployeeModel();
+
     }
 
     public function searchEmployee()
@@ -83,7 +91,7 @@ class ListController extends BaseController
  */
 public function getPassedEmployeesByLevel()
 {
-    $db = \Config\Database::connect();
+    $this->db = \Config\Database::connect();
 
     if (!$this->request->isAJAX()) {
         return $this->response->setStatusCode(405)->setJSON(['status' => 'error', 'message' => 'Method Not Allowed']);
@@ -95,37 +103,23 @@ public function getPassedEmployeesByLevel()
         case '1':
         case '2':
         case '3':
-            $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", [$level, "N"])->getResultArray();
-<<<<<<< HEAD
-            $groupcourse = $db->query("Call getEmployee_HeadQ_Group(?,?)", [$level, "N"])->getResultArray();
+            $dataemplyee = $this->db->query("Call getEmplyee_HeadQ(?,?)", [$level, "N"])->getResultArray();
+            $groupcourse = $this->db->query("Call getEmployee_HeadQ_Group(?,?)", [$level, "N"])->getResultArray();
             break;
         case '4':
-            $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "Y"])->getResultArray();
-            $groupcourse = $db->query("Call getEmployee_HeadQ_Group(?,?)", ["NULL", "Y"])->getResultArray();
+            $dataemplyee = $this->db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "Y"])->getResultArray();
+            $groupcourse = $this->db->query("Call getEmployee_HeadQ_Group(?,?)", ["NULL", "Y"])->getResultArray();
             break;        
         default:
-            $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "N"])->getResultArray();
-            $groupcourse = $db->query("Call getEmployee_HeadQ_Group(?,?)", ["NULL", "N"])->getResultArray();
-=======
-            break;
-        case '4':
-            $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "Y"])->getResultArray();
-            break;
-        
-        default:
-            $dataemplyee = $db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "N"])->getResultArray();
->>>>>>> 57e836121eb369a2b1750a67352f2bdf88aac1ee
+            $dataemplyee = $this->db->query("Call getEmplyee_HeadQ(?,?)", ["NULL", "N"])->getResultArray();
+            $groupcourse = $this->db->query("Call getEmployee_HeadQ_Group(?,?)", ["NULL", "N"])->getResultArray();
             break;
     }
 
     return $this->response->setJSON([
         'status' => 'success',
-<<<<<<< HEAD
         'data'   => $dataemplyee,
         'group'  => $groupcourse
-=======
-        'data'   => $dataemplyee
->>>>>>> 57e836121eb369a2b1750a67352f2bdf88aac1ee
     ]);
 }
 

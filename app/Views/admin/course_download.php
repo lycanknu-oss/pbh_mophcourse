@@ -57,7 +57,7 @@
                 </div>
 
                 <div class="pt-4 border-t border-slate-100 flex justify-end">
-                    <button type="submit" class="px-5 py-2.5 bg-[#154c9f] hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2" disabled>
+                    <button type="submit" class="btn_submit_form px-5 py-2.5 bg-[#154c9f] hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2" disabled>
                         <i class="bi bi-file-earmark-zip"></i>
                         <span>ดาวน์โหลด ZIP (Tab 1)</span>
                     </button>
@@ -82,7 +82,7 @@
                 </div>
 
                 <div class="pt-4 border-t border-slate-100 flex justify-end">
-                    <button type="submit" class="px-5 py-2.5 bg-[#154c9f] hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2" disabled>
+                    <button type="submit" class="btn_submit_form px-5 py-2.5 bg-[#154c9f] hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2" disabled>
                         <i class="bi bi-file-earmark-zip"></i>
                         <span>ดาวน์โหลด ZIP (Tab 2)</span>
                     </button>
@@ -122,8 +122,41 @@ $(document).ready(function() {
         showPanel.removeClass('hidden');
         hidePanel.addClass('hidden');
     }
+});
+</script>
+<script>
+    $(document).ready(function() {
 
-    // 2️⃣ เมื่อเลือก "ประเภทหลักสูตร" ใน Tab 1 ให้ AJAX ดึงหัวข้อหลักสูตร
+    // 🔄 ฟังก์ชันส่ง AJAX ไปสร้าง/อัปเดตไฟล์ CSV
+    function updateExportCsv() {
+        const courseType = $('#filter_course_type').val();
+        const courseName = $('#filter_course_name').val();
+
+        // ถ้ายังไม่ได้เลือกประเภทหลักสูตร ไม่ต้องส่ง AJAX
+        if (!courseType) return;
+
+        $.ajax({
+            url: '<?= base_url("admin/export/generateCsv") ?>',
+            type: 'GET',
+            data: {
+                course_type: courseType,
+                course_name: courseName
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    console.log(`✅ ${response.message} (พบ ${response.count} รายการ)`);
+                } else {
+                    console.error('❌ Error:', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX CSV Export Error:', error);
+            }
+        });
+    }
+
+    // 1️⃣ เมื่อเลือก select#filter_course_type
     $('#filter_course_type').on('change', function() {
         const level = $(this).val();
         const courseSelect = $('#filter_course_name');
@@ -133,6 +166,7 @@ $(document).ready(function() {
             return;
         }
 
+        // โหลด Dropdown หัวข้อหลักสูตร
         courseSelect.html('<option value="">-- กำลังโหลดหัวข้อหลักสูตร... --</option>').prop('disabled', true);
 
         $.ajax({
@@ -141,37 +175,42 @@ $(document).ready(function() {
             data: { level: level },
             dataType: 'json',
             success: function(response) {
-                
-                const rawJson = response.group;
                 courseSelect.html('<option value="">-- ทุกหลักสูตร --</option>');
 
-                if (response && response.status === 'success' && Array.isArray(response.group)) {
-                    $.each(response.group, function(index, item) {
-                        if (item.course_name) {
-                            courseSelect.append(`<option value="${item.course_name}">${item.course_name}</option>`);
-                        }
-                    });
-                }
+                // ตรวจสอบ response ว่าเป็น Array หรือมีกลุ่มข้อมูล
+                const chk = response.group;
+                const items = Array.isArray(response) ? response : (response.group || []);
                 
-                courseSelect.prop('disabled', false); 
-                
-                
-                if(rawJson.length > 0){
-                    $('button[type="submit"]').removeAttr('disabled');
-                } else {
-                    $('button[type="submit"]').attr('disabled','disabled');
-                }
+                items.forEach(function(item) {
+                    if (item.course_name) {
+                        courseSelect.append(`<option value="${item.course_name}">${item.course_name}</option>`);
+                    }
+                });
 
-                //console.log(myArray);
+                if(chk[0] =='') {
+                    $('.btn_submit_form').attr('disabled','disabled');
+                    courseSelect.prop('disabled', true);
+                } else {
+                    $('.btn_submit_form').removeAttr('disabled');
+                    courseSelect.prop('disabled', false);
+                }
                 
+
+
+                // 📝 อัปเดต CSV เมื่อเปลี่ยนประเภทหลักสูตร
+                updateExportCsv();
             },
             error: function() {
                 courseSelect.html('<option value="">-- ไม่พบหัวข้อหลักสูตร --</option>').prop('disabled', false);
-                //$('button[type="button"], input[type="button"]').prop("disabled", true);
             }
         });
     });
 
-});
+    // 2️⃣ เมื่อ onchange select#filter_course_name ให้ทำการอัปเดต data ใน CSV
+    $('#filter_course_name').on('change', function() {
+        updateExportCsv();
+    });
+
+}); 
 </script>
 <?= $this->endSection() ?>
