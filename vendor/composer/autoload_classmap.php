@@ -19,6 +19,7 @@ return array(
     'App\\Models\\EmployeeModel' => $baseDir . '/app/Models/EmployeeModel.php',
     'App\\Models\\GroupLevelModel' => $baseDir . '/app/Models/GroupLevelModel.php',
     'App\\Models\\StaffModel' => $baseDir . '/app/Models/StaffModel.php',
+    'App\\Models\\TrTempFileModel' => $baseDir . '/app/Models/TrTempFileModel.php',
     'App\\Models\\UploadFileModel' => $baseDir . '/app/Models/UploadFileModel.php',
     'CodeIgniter\\API\\ApiException' => $vendorDir . '/codeigniter4/framework/system/API/ApiException.php',
     'CodeIgniter\\API\\BaseTransformer' => $vendorDir . '/codeigniter4/framework/system/API/BaseTransformer.php',

@@ -215,19 +215,33 @@ class AdminController extends BaseController
         $results = [];
 
         switch ($courseType) {
-            case '1':
-            case '2':
-            case '3':
+            case '1': 
                 $departType = "N";
+                $file_mpdf_name = "หลักสูตรอบรมระดับผู้อำนวยการ";                  
                 break;
-            case '4':
+            case '2': 
+                $departType = "N";
+                $file_mpdf_name = "หลักสูตรอบรมระดับรองผู้อำนวยการ"; 
+                break;
+            case '3': 
+                $departType = "N";
+                $file_mpdf_name = "หลักสูตรอบรมระดับหัวหน้ากลุ่มงาน"; 
+                break;
+            case '4': 
                 $courseType = 5;
                 $departType = "Y";
+                $file_mpdf_name = "หลักสูตรอบรมระดับหัวหน้างาน"; 
                 break;
-            default:
+            case '5': 
                 $courseType = 5;
                 $departType = "N";
+                $file_mpdf_name = "หลักสูตรอบรมระดับเจ้าหน้าที่"; 
                 break;
+            default: 
+                $courseType = 5;
+                $departType = "N";
+                $file_mpdf_name = "หลักสูตรอบรมระดับเจ้าหน้าที่"; 
+            break;
         }
         //$departType = ($courseType < 4) ? "N" : "Y";
 
@@ -258,7 +272,7 @@ class AdminController extends BaseController
         fputs($file, "\xEF\xBB\xBF");
 
         // 5. เขียน Header เพียงชุดเดียว
-        fputcsv($file, ['ID', 'Full Name', 'Position', 'Workgroup', 'Department', 'Course ID', 'Course Name', 'file_id', 'file_directory', 'file_name', 'Upload Date']);
+        fputcsv($file, ['ID', 'Full Name', 'Position', 'Workgroup', 'Department', 'Course ID', 'Course Name', 'file_id', 'file_directory', 'file_name', 'Upload Date', 'file_pdf_name']);
         
         //$dataToInsert = [];
         $tempModel->truncateTable(); // ล้างข้อมูลทั้งหมดในตาราง
@@ -284,7 +298,8 @@ class AdminController extends BaseController
                     $row['file_id'] ?? '',
                     $row['file_dir'] ?? '',
                     $row['file_path'] ?? '',
-                    $row['upload_date'] ?? ''
+                    $row['upload_date'] ?? '',
+                    $file_mpdf_name ?? ''
                 ]);
             endif;
         }
@@ -489,6 +504,19 @@ class AdminController extends BaseController
     public function exportPdf()
     {
         $request = $this->request->getPost();
+
+        $courseType = $this->request->getPost('course_type') ?? '';
+        $courseName = $this->request->getPost('course_name') ?? '';
+
+        switch ($courseType) {
+            case '1': $filecours ="หลักสูตรอบรมระดับผู้อำนวยการ"; break;
+            case '2': $filecours ="หลักสูตรอบรมระดับรองผู้อำนวยการ"; break;
+            case '3': $filecours ="หลักสูตรอบรมระดับหัวหน้ากลุ่มงาน"; break;
+            case '4': $filecours ="หลักสูตรอบรมระดับหัวหน้างาน"; break;
+            case '5': $filecours ="หลักสูตรอบรมระดับเจ้าหน้าที่"; break;
+            default: $filecours ="หลักสูตรอบรมระดับเจ้าหน้าที่"; break;
+        }
+
         $hoscode = env('project.hoscode', '10956');
 
         // 1️⃣ อ่านข้อมูลจากไฟล์แคช cache/export_list.csv
@@ -528,6 +556,7 @@ class AdminController extends BaseController
         foreach ($results as $emp) {
             $fileDir  = $emp['filedirectory'] ?? $emp['file_directory'] ?? '';
             $fileName = $emp['filename'] ?? $emp['file_name'] ?? '';
+            $file_pdf_name = $emp['file_pdf_name'] ?? '';
 
             if (empty($fileName)) {
                 continue;
@@ -571,7 +600,7 @@ class AdminController extends BaseController
         $tempPdfPath = $uploadDir . '/' . time() . '_merged_export.pdf';
         file_put_contents($tempPdfPath, $pdfContent);
 
-        $pdfDownloadName = "{$hoscode}_Merged_" . date('Ymd_His') . ".pdf";
+        $pdfDownloadName = "{$hoscode}_{$filecours}_". date('Ymd_His') . ".pdf";
 
         // ส่งดาวน์โหลด (ใช้ setFileName เพื่อกำหนดชื่อไฟล์ให้ผู้ใช้)
         return $this->response->download($tempPdfPath, null)->setFileName($pdfDownloadName);
@@ -634,9 +663,10 @@ class AdminController extends BaseController
 
                     // สร้าง HTML จัดวางรูปภาพกึ่งกลางหน้า A4 พร้อมจำกัดขนาดไม่ให้เกินหน้า
                     $html = '
-                    <div style="text-align: center; width: 100%; height: 100%;">
-                        <img src="' . $filePath . '" style="max-width: 100%; max-height: 270mm; margin: auto;" />
-                    </div>';
+                    <div style="width: 100%; text-align: center;">
+                        <img src="' . $filePath . '" style="max-width: 100%; max-height: 200mm; height: auto;" />
+                    </div>
+                    ';
 
                     $mpdf->WriteHTML($html);
                     $pageCountAdded++;

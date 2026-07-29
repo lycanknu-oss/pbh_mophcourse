@@ -150,6 +150,7 @@ class ComposerStaticInitf5cce40800fa5dae1504b9364f585e6a
         'App\\Models\\EmployeeModel' => __DIR__ . '/../..' . '/app/Models/EmployeeModel.php',
         'App\\Models\\GroupLevelModel' => __DIR__ . '/../..' . '/app/Models/GroupLevelModel.php',
         'App\\Models\\StaffModel' => __DIR__ . '/../..' . '/app/Models/StaffModel.php',
+        'App\\Models\\TrTempFileModel' => __DIR__ . '/../..' . '/app/Models/TrTempFileModel.php',
         'App\\Models\\UploadFileModel' => __DIR__ . '/../..' . '/app/Models/UploadFileModel.php',
         'CodeIgniter\\API\\ApiException' => __DIR__ . '/..' . '/codeigniter4/framework/system/API/ApiException.php',
         'CodeIgniter\\API\\BaseTransformer' => __DIR__ . '/..' . '/codeigniter4/framework/system/API/BaseTransformer.php',
