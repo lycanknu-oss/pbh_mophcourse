@@ -51,16 +51,29 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">หัวข้อหลักสูตรอบรม</label>
                         <select name="course_name" id="filter_course_name" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#154c9f] outline-none">
-                            <option value="">-- ทุกหลักสูตร --</option>
+                            <option value="" checked>-- ทุกหลักสูตร --</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="pt-4 border-t border-slate-100 flex justify-end">
-                    <button type="submit" class="btn_submit_form px-5 py-2.5 bg-[#154c9f] hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2" disabled>
-                        <i class="bi bi-file-earmark-zip"></i>
-                        <span>ดาวน์โหลด ZIP (Tab 1)</span>
-                    </button>
+                <div class="flex flex-wrap items-center gap-3">
+                <!-- ปุ่มส่งออก ZIP (Primary Outline) -->
+                <button type="submit" formmethod="post" formaction="<?= base_url('admin/export/exportZip') ?>" class="inline-flex items-center gap-2 rounded-lg border border-blue-600 bg-white px-4 py-2.5 text-sm font-medium text-blue-600 shadow-sm transition-all hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 active:bg-blue-100">
+                    <!-- Icon Zip -->
+                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v1a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                    </svg>
+                    <span>ส่งออกเป็น ZIP</span>
+                </button>
+
+                <!-- ปุ่มส่งออก PDF (Danger Solid) -->
+                <button type="submit" formmethod="post" formaction="<?= base_url('admin/export/exportPdf') ?>" class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white shadow-md transition-all hover:bg-red-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500/50 active:bg-red-800">
+                    <!-- Icon PDF -->
+                    <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>ส่งออกเป็น PDF รวม</span>
+                </button>
                 </div>
             </div>
 
@@ -296,7 +309,7 @@ $(document).ready(function() {
         const courseSelect = $('#filter_course_name');
 
         if (!level) {
-            courseSelect.html('<option value="">-- ทุกหลักสูตร --</option>');
+            courseSelect.html('<option value="" checked >-- ทุกหลักสูตร --</option>');
             return;
         }
 
@@ -309,7 +322,7 @@ $(document).ready(function() {
             data: { level: level },
             dataType: 'json',
             success: function(response) {
-                courseSelect.html('<option value="">-- ทุกหลักสูตร --</option>');
+                courseSelect.html('<option value="" checked >-- ทุกหลักสูตร --</option>');
 
                 // ตรวจสอบ response ว่าเป็น Array หรือมีกลุ่มข้อมูล
                 const chk = response.group;

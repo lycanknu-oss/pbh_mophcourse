@@ -277,64 +277,7 @@
 
         </div>
     </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            checkAndShowWelcomeModal();
-        });
-
-        // 1. ตรวจสอบก่อนแสดง Modal
-        function checkAndShowWelcomeModal() {
-            const hideUntil = localStorage.getItem("hideWelcomePopupUntil");
-            const sessionSeen = sessionStorage.getItem("popupSeen"); // ตรวจสอบ Session ที่เราตั้งไว้
-            const today = new Date().toDateString();
-
-            // แสดง Popup ก็ต่อเมื่อ:
-            // 1. วันนี้ยังไม่ปิดถาวร (LocalStorage)
-            // 2. และยังไม่ได้กดปุ่มเข้าหน้าหลักสูตรใน Session นี้ (SessionStorage)
-            if (hideUntil !== today && sessionSeen !== "true") {
-                const modal = document.getElementById("welcomeModal");
-                const card = document.getElementById("welcomeModalCard");
-
-                modal.classList.remove("hidden");
-                modal.classList.add("flex");
-
-                setTimeout(() => {
-                    card.classList.remove("scale-95", "opacity-0");
-                    card.classList.add("scale-100", "opacity-100");
-                }, 50);
-            }
-        }
-
-        // 2. ฟังก์ชันเมื่อกดปุ่ม "เข้าสู่หน้าหลักสูตร"
-        function handleCourseRedirect() {
-            // บันทึก session_id (หรือ flag) เพื่อให้รู้ว่าเข้าหน้านี้แล้ว
-            sessionStorage.setItem("popupSeen", "true");
-            
-            // Redirect ไปหน้า courses
-            window.location.href = "<?= base_url('courses.php') ?>";
-        }
-
-        // 3. ฟังก์ชันปิด Modal ปกติ
-        function closeWelcomeModal() {
-            const dontShow = document.getElementById("dontShowToday").checked;
-            const modal = document.getElementById("welcomeModal");
-            const card = document.getElementById("welcomeModalCard");
-
-            if (dontShow) {
-                const today = new Date().toDateString();
-                localStorage.setItem("hideWelcomePopupUntil", today);
-            }
-
-            card.classList.remove("scale-100", "opacity-100");
-            card.classList.add("scale-95", "opacity-0");
-
-            setTimeout(() => {
-                modal.classList.remove("flex");
-                modal.classList.add("hidden");
-            }, 300);
-        }
-    </script>
+    
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <!-- ➕ เพิ่ม Alpine.js ไว้ใน <head> -->
@@ -422,6 +365,117 @@
                 });
             }
         });
+    </script>
+    <!-- 📊 Global Auto Logger Script -->
+    <script>
+    (function() {
+        'use strict';
+
+        document.addEventListener('click', function(e) {
+            // 1. หา Element ที่มีนัยสำคัญในการคลิก (ปุ่ม, ลิงก์, แท็บ, อินพุต, เมนู)
+            const targetEl = e.target.closest('button, a, input, select, textarea, .tab-btn, [data-level], tr, nav a, .btn') || e.target;
+            
+            // กรองไม่บันทึกการคลิกพื้นที่ว่างเปล่าทั่วไป (ถ้าต้องการบันทึกเฉพาะจุดที่ปฏิสัมพันธ์ได้)
+            const tagName = targetEl.tagName.toLowerCase();
+            
+            // 2. รวบรวมข้อมูลบริบทของการคลิก
+            const elementId = targetEl.id ? `#${targetEl.id}` : '';
+            const innerText = targetEl.innerText ? targetEl.innerText.trim().replace(/\s+/g, ' ').substring(0, 60) : '';
+            const hrefAttr  = targetEl.getAttribute('href') || '';
+            
+            const eventType   = 'AUTO_CLICK';
+            const eventTitle  = `Click <${tagName}> ${elementId} [${innerText || 'Icon/Element'}]`;
+            
+            const eventDetail = JSON.stringify({
+                tag: tagName,
+                id: targetEl.id || null,
+                class: targetEl.className || null,
+                text: innerText || null,
+                href: hrefAttr || null,
+                data_level: targetEl.getAttribute('data-level') || null,
+                page_title: document.title,
+                page_url: window.location.href
+            });
+
+            // 3. เตรียม Data สำหรับส่งไปยัง Server
+            const formData = new FormData();
+            formData.append('event_type', eventType);
+            formData.append('event_title', eventTitle);
+            formData.append('event_detail', eventDetail);
+            formData.append('<?= csrf_token() ?>', '<?= csrf_hash() ?>');
+
+            // 4. ส่งข้อมูลด้วย sendBeacon (ทำงานเบื้องหลัง ประสิทธิภาพสูง หน้าเว็บไม่หน่วง)
+            const logEndpoint = '<?= base_url("api/log_user_activity.php") ?>';
+
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(logEndpoint, formData);
+            } else {
+                // Fallback สำหรับเบราว์เซอร์เก่า
+                fetch(logEndpoint, {
+                    method: 'POST',
+                    body: formData,
+                    keepalive: true
+                }).catch(err => console.error('Log error:', err));
+            }
+        }, true); // ใช้ Event Capturing (true) เพื่อดักจับ Event คลิกในทุกระดับของ DOM
+    })();
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            checkAndShowWelcomeModal();
+        });
+
+        // 1. ตรวจสอบก่อนแสดง Modal
+        function checkAndShowWelcomeModal() {
+            const hideUntil = localStorage.getItem("hideWelcomePopupUntil");
+            const sessionSeen = sessionStorage.getItem("popupSeen"); // ตรวจสอบ Session ที่เราตั้งไว้
+            const today = new Date().toDateString();
+
+            // แสดง Popup ก็ต่อเมื่อ:
+            // 1. วันนี้ยังไม่ปิดถาวร (LocalStorage)
+            // 2. และยังไม่ได้กดปุ่มเข้าหน้าหลักสูตรใน Session นี้ (SessionStorage)
+            if (hideUntil !== today && sessionSeen !== "true") {
+                const modal = document.getElementById("welcomeModal");
+                const card = document.getElementById("welcomeModalCard");
+
+                modal.classList.remove("hidden");
+                modal.classList.add("flex");
+
+                setTimeout(() => {
+                    card.classList.remove("scale-95", "opacity-0");
+                    card.classList.add("scale-100", "opacity-100");
+                }, 50);
+            }
+        }
+
+        // 2. ฟังก์ชันเมื่อกดปุ่ม "เข้าสู่หน้าหลักสูตร"
+        function handleCourseRedirect() {
+            // บันทึก session_id (หรือ flag) เพื่อให้รู้ว่าเข้าหน้านี้แล้ว
+            sessionStorage.setItem("popupSeen", "true");
+            
+            // Redirect ไปหน้า courses
+            window.location.href = "<?= base_url('courses.php') ?>";
+        }
+
+        // 3. ฟังก์ชันปิด Modal ปกติ
+        function closeWelcomeModal() {
+            const dontShow = document.getElementById("dontShowToday").checked;
+            const modal = document.getElementById("welcomeModal");
+            const card = document.getElementById("welcomeModalCard");
+
+            if (dontShow) {
+                const today = new Date().toDateString();
+                localStorage.setItem("hideWelcomePopupUntil", today);
+            }
+
+            card.classList.remove("scale-100", "opacity-100");
+            card.classList.add("scale-95", "opacity-0");
+
+            setTimeout(() => {
+                modal.classList.remove("flex");
+                modal.classList.add("hidden");
+            }, 300);
+        }
     </script>
     <?= $this->renderSection('page_scripts') ?>
 </body>

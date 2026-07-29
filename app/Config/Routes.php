@@ -20,6 +20,10 @@ $routes->group('data', function ($routes) {
     $routes->get('employees_bylevel.php', 'Data\ListController::getPassedEmployeesByLevel');
 });
 
+$routes->group('api', function ($routes) {
+    $routes->post('log_user_activity.php', 'DashboardController::logUserActivity'); 
+});
+
 
 $routes->group('auth', function ($routes) {
     $routes->get('login.php', 'AuthController::login');
@@ -45,9 +49,11 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->get('course-reports', 'AdminController::courseDetails');
     $routes->get('course-export', 'AdminController::courseDownloads');
 
+    //การส่งออกข้อมูล (Export Data)
     $routes->get('export/generateCsv', 'AdminController::generateCsv');
     $routes->post('export/exportZip', 'AdminController::exportZip');
     $routes->get('export/getCsvData', 'AdminController::getExportCsvData');
+    $routes->post('export/exportPdf', 'AdminController::exportPdf');
 
     // 👔 การจัดการข้อมูลบุคลากร (tr_employee Management)
     $routes->get('employees', 'AdminController::employees');

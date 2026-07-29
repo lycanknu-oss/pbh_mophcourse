@@ -6,6 +6,8 @@ use App\Controllers\BaseController;
 use App\Models\CourseModel;
 use App\Models\EmployeeModel;
 use App\Models\UploadFileModel;
+use App\Models\TrTempFileModel;
+use Mpdf\Mpdf;
 use ZipArchive; // 👈 เพิ่มบรรทัดนี้
 
 class AdminController extends BaseController
@@ -14,6 +16,7 @@ class AdminController extends BaseController
     protected $courseModel;
     protected $empModel;
     protected $fileModel;
+    protected $tempFileModel;
 
     public function __construct()
     {
@@ -21,6 +24,7 @@ class AdminController extends BaseController
         $this->courseModel = new CourseModel();
         $this->empModel = new EmployeeModel();
         $this->fileModel = new UploadFileModel();
+        $this->tempFileModel = new TrTempFileModel();
     }
 
     private function checkAdminAuth()
@@ -198,6 +202,8 @@ class AdminController extends BaseController
      */
     public function generateCsv()
     {
+        $tempModel = new TrTempFileModel();
+
         if (!$this->request->isAJAX()) {
             return $this->response->setStatusCode(405)->setJSON(['status' => 'error', 'message' => 'Method Not Allowed']);
         }
@@ -227,12 +233,8 @@ class AdminController extends BaseController
 
         // 1. Query ข้อมูลตามเงื่อนไข
         $db = \Config\Database::connect();
-
-        if (!empty($courseType) && empty($courseName)) {
-            $results = $db->query('CALL getEmplyee_HeadQ(?,?)', [$courseType, $departType])->getResultArray();
-        } elseif (!empty($courseType) && !empty($courseName)) {
-            $results = $db->query('CALL getEmployee_HeadQ_LikeCourse(?,?,?)', [$courseType, $departType, $courseName])->getResultArray();
-        }
+        $results = $db->query('CALL getEmployee_exportCSv(?,?,?)', [$courseType, $departType, $courseName])->getResultArray();
+        
 
         // 2. กำหนด Path และสร้างโฟลเดอร์ cache หากยังไม่มี
         $dirPath = WRITEPATH . 'cache';
@@ -257,25 +259,38 @@ class AdminController extends BaseController
 
         // 5. เขียน Header เพียงชุดเดียว
         fputcsv($file, ['ID', 'Full Name', 'Position', 'Workgroup', 'Department', 'Course ID', 'Course Name', 'file_id', 'file_directory', 'file_name', 'Upload Date']);
-
+        
+        //$dataToInsert = [];
+        $tempModel->truncateTable(); // ล้างข้อมูลทั้งหมดในตาราง
+        
         // 6. เขียนข้อมูลบุคลากรลง CSV
         foreach ($results as $row) {
             if($row['course_id'] !=''):
-            fputcsv($file, [
-                $row['cid'] ?? '',
-                $row['fname'] ?? '',
-                $row['position'] ?? '',
-                $row['wg_name'] ?? '',
-                $row['dp_name'] ?? '',
-                $row['course_id'] ?? '',
-                $row['course_name'] ?? '',
-                $row['file_id'] ?? '',
-                $row['file_dir'] ?? '',
-                $row['file_path'] ?? '',
-                $row['upload_date'] ?? ''
-            ]);
+                $dataToInsert[] = [ 
+                    'file_id'     => $row['file_id'],
+                    'file_path'   => $row['file_dir'], 
+                    'file_name'   => $row['file_path'],
+                    'course_type' => $courseType,
+                    'course_id'   => $row['course_id']
+                ];
+                fputcsv($file, [
+                    $row['cid'] ?? '',
+                    $row['fname'] ?? '',
+                    $row['position'] ?? '',
+                    $row['wg_name'] ?? '',
+                    $row['dp_name'] ?? '',
+                    $row['course_id'] ?? '',
+                    $row['course_name'] ?? '',
+                    $row['file_id'] ?? '',
+                    $row['file_dir'] ?? '',
+                    $row['file_path'] ?? '',
+                    $row['upload_date'] ?? ''
+                ]);
             endif;
         }
+
+        // 3. บันทึกแบบ Batch Insert
+        $tempModel->insertBatchTempFiles($dataToInsert);
 
         // 7. ปิดไฟล์หลังจากเขียนข้อมูลทั้งหมดเสร็จสิ้น
         fclose($file);
@@ -341,15 +356,21 @@ class AdminController extends BaseController
         $courseType = $request['course_type'] ?? '';
         $courseName = $request['course_name'] ?? '';
 
+        switch ($courseType) {
+            case '1': $filecours ="หลักสูตรอบรมระดับผู้อำนวยการ"; break;
+            case '2': $filecours ="หลักสูตรอบรมระดับรองผู้อำนวยการ"; break;
+            case '3': $filecours ="หลักสูตรอบรมระดับหัวหน้ากลุ่มงาน"; break;
+            case '4': $filecours ="หลักสูตรอบรมระดับหัวหน้างาน"; break;
+            case '5': $filecours ="หลักสูตรอบรมระดับเจ้าหน้าที่"; break;
+            default: $filecours ="หลักสูตรอบรมระดับเจ้าหน้าที่"; break;
+        }
+
+        $fullfilename = $filecours . ($courseName ? '_' . $courseName : '') . "_" . date('Ymd_His') . ".zip";
+
         // 1️⃣ ดึง Hoscode จาก env หรือ config
         $hoscode = env('project.hoscode', '10956');
 
-        // 2️⃣ ตั้งชื่อไฟล์ PDF ย่อย
-        $courseText = !empty($courseName) ? $courseName : 'ทุกหลักสูตร';
-        $cleanCourseText = preg_replace('/[^\w\s\d\p{Thai}-]/u', '', $courseText);
-        $pdfFileName = "{$hoscode}_ประเภท{$courseType}_{$cleanCourseText}.pdf";
-
-        // 3️⃣ อ่านข้อมูลจากไฟล์ cache/export_list.csv
+        // 2️⃣ อ่านข้อมูลจากไฟล์แคช cache/export_list.csv
         $csvPath = WRITEPATH . 'cache/export_list.csv';
 
         if (!file_exists($csvPath)) {
@@ -364,15 +385,11 @@ class AdminController extends BaseController
                 rewind($handle);
             }
 
-            // ดึง Header มาจับคู่ Key กับ Value
             $headers = fgetcsv($handle);
-
             if ($headers !== FALSE) {
-                // แปลง Header เป็น lowercase หรือชื่อคีย์ที่ใช้งานง่าย (เช่น 'full name' -> 'fullname', 'file path' -> 'file_path')
-                $cleanHeaders = array_map(function($header) {
-                    $h = strtolower(trim($header));
-                    $h = str_replace([' ', '_'], '', $h);
-                    return $h;
+                // Clean headers เป็นคีย์ภาษาอังกฤษแบบตัวพิมพ์เล็ก (ไม่มีเว้นวรรค/ขีดล่าง)
+                $cleanHeaders = array_map(function($h) {
+                    return strtolower(str_replace([' ', '_'], '', trim($h)));
                 }, $headers);
 
                 while (($row = fgetcsv($handle)) !== FALSE) {
@@ -385,93 +402,258 @@ class AdminController extends BaseController
         }
 
         if (empty($results)) {
-            return redirect()->back()->with('error', 'ไม่พบข้อมูลไฟล์ใน CSV ตามเงื่อนไข');
+            return redirect()->back()->with('error', 'ไม่พบรายการข้อมูลในไฟล์แคช');
         }
 
-        // 4️⃣ สร้าง Zip File ชั่วคราว
-        $zip = new ZipArchive();
-        $tempDir = WRITEPATH . 'uploads';
-        if (!is_dir($tempDir)) {
-            mkdir($tempDir, 0777, true);
+        // 3️⃣ เตรียมโฟลเดอร์และตั้งชื่อไฟล์ ZIP ชั่วคราว
+        $uploadDir = WRITEPATH . 'uploads';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
         }
 
-        $tempZipPath = $tempDir . '/' . time() . '_export.zip';
+        $tempZipPath = $uploadDir . '/' . time() . '_export.zip';
 
-        if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
-            return redirect()->back()->with('error', 'ไม่สามารถสร้างไฟล์ Zip ได้');
+        $zip = new \ZipArchive();
+        if ($zip->open($tempZipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== TRUE) {
+            return redirect()->back()->with('error', 'ไม่สามารถสร้างไฟล์ ZIP ได้ กรุณาเช็กสิทธิ์โฟลเดอร์ uploads');
         }
 
-        // 5️⃣ วนลูปอ่านข้อมูลบุคลากรจาก CSV แล้วสร้าง PDF ใส่ลง Zip 
-            foreach ($results as $emp) {
-                $fullnameRaw = $emp['fullname'] ?? $emp['full name'] ?? 'employee';
-                $empName = preg_replace('/[^\w\s\d\p{Thai}-]/u', '', $fullnameRaw);
-                
-                // 📁 ดึง path ไฟล์จากคอลัมน์ใน CSV (ผสม file_directory + file_name)
-                $fileDir  = $emp['filedirectory'] ?? $emp['file_directory'] ?? '';
-                $fileName = $emp['filename'] ?? $emp['file_name'] ?? '';
+        $hasFiles = false;
 
-                // สร้าง Full Absolute Path
-                $files = [];
-                if (!empty($fileDir) && !empty($fileName)) {
-                    // ต่อ path เช่น WRITEPATH . 'uploads/' . directory . '/' . filename
-                    $fullFilePath = FCPATH . rtrim($fileDir, '/') . '/' . $fileName; 
-                    if (file_exists($fullFilePath)) {
-                        $files[] = $fullFilePath;
-                    }
-                }
+        // 4️⃣ วนลูปอ่านข้อมูลบุคลากรและแนบไฟล์ต้นทางลง ZIP
+        foreach ($results as $emp) {
+            $fullnameRaw = $emp['fullname'] ?? $emp['full name'] ?? 'employee';
+            $empName = preg_replace('/[^\w\s\d\p{Thai}-]/u', '', $fullnameRaw);
+            
+            $fileDir  = $emp['filedirectory'] ?? $emp['file_directory'] ?? '';
+            $fileName = $emp['filename'] ?? $emp['file_name'] ?? '';
 
-                if (empty($files)) continue;
+            if (empty($fileName)) {
+                continue;
+            }
 
-                // รวมไฟล์ (PNG, JPG, PDF) ของคนนี้ให้เป็น 1 PDF
-                $mergedPdfContent = $this->generateMergedPdfContent($files);
+            // จัดระเบียบ Path
+            $cleanDir = trim($fileDir, '/\\');
+            
+            // รายการ Candidate Paths ที่อาจเก็บไฟล์จริงไว้
+            $pathCandidates = [
+                FCPATH . $cleanDir . '/' . $fileName,                     // public/uploads/...
+                WRITEPATH . $cleanDir . '/' . $fileName,                    // writable/uploads/...
+                FCPATH . 'uploads/' . $cleanDir . '/' . $fileName,         
+                WRITEPATH . 'uploads/' . $cleanDir . '/' . $fileName,
+                FCPATH . $fileName,
+                WRITEPATH . 'uploads/' . $fileName
+            ];
 
-                if ($mergedPdfContent) {
-                    $entryName = "{$empName}/{$pdfFileName}";
-                    $zip->addFromString($entryName, $mergedPdfContent);
+            $foundFilePath = null;
+            foreach ($pathCandidates as $candidate) {
+                if (file_exists($candidate) && is_file($candidate)) {
+                    $foundFilePath = $candidate;
+                    break;
                 }
             }
 
+            if ($foundFilePath) {
+                // 📁 กำหนดโครงสร้างไฟล์ใน ZIP: "ชื่อบุคลากร/ชื่อไฟล์เดิม"
+                $entryName = "{$empName}/{$fileName}";
+                
+                // แนบไฟล์ต้นทางเข้าไปใน ZIP โดยตรง (ไม่ต้องแปลงเป็น PDF)
+                if ($zip->addFile($foundFilePath, $entryName)) {
+                    $hasFiles = true;
+                }
+            } else {
+                log_message('error', "ExportZip: ไม่พบไฟล์ต้นทางสำหรับ {$empName} ({$fileName})");
+            }
+        }
+
+        // 5️⃣ ปิดไฟล์ ZIP
         $zip->close();
 
-        // 6️⃣ ส่งออกไฟล์ Zip ให้ผู้ใช้ดาวน์โหลด
-        $zipDownloadName = "{$hoscode}_Report_" . date('Ymd_His') . ".zip";
+        // 🛑 6️⃣ ตรวจสอบความถูกต้องของไฟล์ ZIP ก่อนส่งดาวน์โหลด
+        if (!$hasFiles || !file_exists($tempZipPath) || filesize($tempZipPath) === 0) {
+            if (file_exists($tempZipPath)) {
+                @unlink($tempZipPath);
+            }
+            return redirect()->back()->with('error', 'ไม่พบไฟล์แนบต้นทางในระบบ ไม่สามารถสร้าง ZIP ได้');
+        }
+
+        // 7️⃣ ส่งออกไฟล์ ZIP ให้ผู้ใช้ดาวน์โหลด
+        $zipDownloadName = "{$hoscode}_".$fullfilename;
         return $this->response->download($tempZipPath, null)->setFileName($zipDownloadName);
     }
 
     // 📄 Helper Function: รวมรูปภาพ (JPG/PNG) และ PDF ให้เป็น 1 PDF
-    private function generateMergedPdfContent(array $fileList)
+    /**
+     * 🟢 ฟังก์ชันสำหรับสร้างและส่งออก PDF รวม
+     */
+    public function exportPdf()
     {
-        // ใช้ FPDF/FPDI หรือ FPDF ธรรมดา
-        // ในที่นี้สมมติโครงสร้างการแปลงรูปภาพ/PDF รวมเป็น Single Stream
-        // สามารถปรับใช้ mPDF / FPDF ตาม Library ที่ท่านติดตั้งไว้
-        
-        $mpdf = new \Mpdf\Mpdf(['mode' => 'utf-8', 'format' => 'A4']);
+        $request = $this->request->getPost();
+        $hoscode = env('project.hoscode', '10956');
 
-        foreach ($fileList as $index => $fileName) {
-            $filePath = FCPATH . 'uploads/certificates/' . trim($fileName);
-            if (!file_exists($filePath)) continue;
+        // 1️⃣ อ่านข้อมูลจากไฟล์แคช cache/export_list.csv
+        $csvPath = WRITEPATH . 'cache/export_list.csv';
+        if (!file_exists($csvPath)) {
+            return redirect()->back()->with('error', 'ไม่พบไฟล์ข้อมูลแคช กรุณาทำการกรองข้อมูลใหม่อีกครั้ง');
+        }
 
-            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-
-            if ($index > 0) {
-                $mpdf->AddPage();
+        $results = [];
+        if (($handle = fopen($csvPath, 'r')) !== FALSE) {
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                rewind($handle);
             }
 
-            if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
-                // ถ้ารูปภาพ ให้แสดงเต็มหน้า A4
-                $mpdf->WriteHTML("<div style='text-align:center;'><img src='{$filePath}' style='max-width:100%; max-height:900px;' /></div>");
-            } elseif ($ext === 'pdf') {
-                // ถ้าเป็น PDF ให้ Import หน้า PDF เข้ามา
-                $pageCount = $mpdf->setSourceFile($filePath);
-                for ($i = 1; $i <= $pageCount; $i++) {
-                    if ($i > 1 || $index > 0) $mpdf->AddPage();
-                    $tplId = $mpdf->importPage($i);
-                    $mpdf->useTemplate($tplId);
+            $headers = fgetcsv($handle);
+            if ($headers !== FALSE) {
+                $cleanHeaders = array_map(function($h) {
+                    return strtolower(str_replace([' ', '_'], '', trim($h)));
+                }, $headers);
+
+                while (($row = fgetcsv($handle)) !== FALSE) {
+                    if (count($cleanHeaders) === count($row)) {
+                        $results[] = array_combine($cleanHeaders, $row);
+                    }
+                }
+            }
+            fclose($handle);
+        }
+
+        if (empty($results)) {
+            return redirect()->back()->with('error', 'ไม่พบรายการข้อมูลในไฟล์แคช');
+        }
+
+        // 2️⃣ ค้นหาไฟล์แนบต้นทางทั้งหมดตามรายการใน CSV
+        $allFiles = [];
+        foreach ($results as $emp) {
+            $fileDir  = $emp['filedirectory'] ?? $emp['file_directory'] ?? '';
+            $fileName = $emp['filename'] ?? $emp['file_name'] ?? '';
+
+            if (empty($fileName)) {
+                continue;
+            }
+
+            $cleanDir = trim($fileDir, '/\\');
+            $pathCandidates = [
+                FCPATH . $cleanDir . '/' . $fileName,                     // public/uploads/...
+                WRITEPATH . $cleanDir . '/' . $fileName,                    // writable/uploads/...
+                FCPATH . 'uploads/' . $cleanDir . '/' . $fileName,
+                WRITEPATH . 'uploads/' . $cleanDir . '/' . $fileName,
+                FCPATH . $fileName,
+                WRITEPATH . 'uploads/' . $fileName
+            ];
+
+            foreach ($pathCandidates as $candidate) {
+                if (file_exists($candidate) && is_file($candidate)) {
+                    $allFiles[] = $candidate;
+                    break;
                 }
             }
         }
 
-        return $mpdf->Output('', 'S'); // คืนค่าเป็น String Stream
+        if (empty($allFiles)) {
+            return redirect()->back()->with('error', 'ไม่พบไฟล์แนบต้นทางในระบบ');
+        }
+
+        // 3️⃣ ประมวลผลรวมไฟล์ด้วย mPDF
+        $pdfContent = $this->generateMergedPdfContent($allFiles);
+
+        if (!$pdfContent) {
+            return redirect()->back()->with('error', 'เกิดข้อผิดพลาดในการสร้างไฟล์ PDF ด้วย mPDF');
+        }
+
+        // 4️⃣ บันทึกเป็นไฟล์ชั่วคราวเพื่อเตรียมส่งออก
+        $uploadDir = WRITEPATH . 'uploads';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $tempPdfPath = $uploadDir . '/' . time() . '_merged_export.pdf';
+        file_put_contents($tempPdfPath, $pdfContent);
+
+        $pdfDownloadName = "{$hoscode}_Merged_" . date('Ymd_His') . ".pdf";
+
+        // ส่งดาวน์โหลด (ใช้ setFileName เพื่อกำหนดชื่อไฟล์ให้ผู้ใช้)
+        return $this->response->download($tempPdfPath, null)->setFileName($pdfDownloadName);
+    }
+
+    /**
+     * 🟢 ฟังก์ชันรวมไฟล์เอกสารและรูปภาพเป็น PDF ไบนารีด้วย mPDF
+     */
+    private function generateMergedPdfContent(array $filePaths): ?string
+    {
+        if (empty($filePaths)) {
+            return null;
+        }
+
+        try {
+            // ตั้งค่า mPDF รองรับการรวมไฟล์ และรองรับ UTF-8 / ภาษาไทย
+           $mpdf = new Mpdf([
+                        'mode'          => 'utf-8',
+                        'format'        => 'A4-L', // 👈 เพิ่ม -L ต่อท้าย A4 เพื่อกำหนดเป็น Landscape
+                        'margin_left'   => 10,
+                        'margin_right'  => 10,
+                        'margin_top'    => 10,
+                        'margin_bottom' => 10,
+                        'tempDir'       => WRITEPATH . 'cache'
+                    ]);
+
+            $pageCountAdded = 0;
+
+            foreach ($filePaths as $filePath) {
+                if (!file_exists($filePath)) {
+                    continue;
+                }
+
+                $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+                // 📄 1. กรณีเป็นไฟล์ PDF
+                if ($ext === 'pdf') {
+                    try {
+                        // mPDF 8.x + FPDI ในตัว
+                        $pageCount = $mpdf->setSourceFile($filePath);
+
+                        for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                            if ($pageCountAdded > 0) {
+                                $mpdf->AddPage('L', '', '', '', '', 10, 10, 10, 10); // L, orientation, ..., margins
+                            }
+
+                            $templateId = $mpdf->importPage($pageNo);
+                            $mpdf->useTemplate($templateId);
+                            $pageCountAdded++;
+                        }
+                    } catch (\Exception $e) {
+                        log_message('error', "mPDF PDF Import Error ({$filePath}): " . $e->getMessage());
+                    }
+                } 
+                // 🖼️ 2. กรณีเป็นไฟล์รูปภาพ (JPG, PNG, GIF)
+                elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    if ($pageCountAdded > 0) {
+                        $mpdf->AddPage('L', '', '', '', '', 10, 10, 10, 10); // L, orientation, ..., margins
+                    }
+
+                    // สร้าง HTML จัดวางรูปภาพกึ่งกลางหน้า A4 พร้อมจำกัดขนาดไม่ให้เกินหน้า
+                    $html = '
+                    <div style="text-align: center; width: 100%; height: 100%;">
+                        <img src="' . $filePath . '" style="max-width: 100%; max-height: 270mm; margin: auto;" />
+                    </div>';
+
+                    $mpdf->WriteHTML($html);
+                    $pageCountAdded++;
+                }
+            }
+
+            if ($pageCountAdded === 0) {
+                return null;
+            }
+
+            // ส่งออกเนื้อหา PDF เป็น Binary String
+            return $mpdf->Output('', \Mpdf\Output\Destination::STRING_RETURN);
+
+        } catch (\Exception $e) {
+            log_message('error', 'generateMergedPdfContent Exception: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**

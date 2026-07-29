@@ -383,7 +383,7 @@ $(document).ready(function() {
                 render: function(data, type, row) {
                     const name = data || '-';
                     const firstChar = name.trim().charAt(0) || 'U';
-                    const cidHtml = row && row.cid ? `<span class="text-[10px] text-slate-400 font-mono">CID: ${row.cid}</span>` : '';
+                    const cidHtml = row && row.cid ? `<span class="text-[10px] text-slate-400 font-mono">-</span>` : '';
                     return `<div class="flex items-center gap-2.5">
                                 <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#154c9f] to-indigo-500 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
                                     ${firstChar}
