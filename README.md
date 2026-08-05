@@ -1,168 +1,88 @@
-📊 Training Dashboard & Evaluation System
-ระบบรายงานผลสัมฤทธิ์และติดตามการส่งหลักฐานการฝึกอบรมบุคลากร
+<div align="center">
 
-เว็บแอปพลิเคชันสำหรับจัดเก็บ แสดงผลสถิติ และติดตามผู้ผ่านการฝึกอบรมแบบ Real-time ตามระดับกลุ่มหลักสูตร พัฒนาด้วย CodeIgniter 4, DataTables (AJAX) และ Tailwind CSS
+  <h1>🏥 PBH-MOPHCOURSE</h1>
+  <p><b>ระบบจัดการและติดตามรายงานผลการอบรมบุคลากร โรงพยาบาลพิบูลมังสาหาร</b></p>
 
-🌟 ฟีเจอร์หลัก (Key Features)
-Dashboard Overview & KPIs:
+  <!-- Badges Section -->
+  <p>
+    <img src="https://img.shields.io/badge/PHP-8.2%2B-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP">
+    <img src="https://img.shields.io/badge/CodeIgniter-4.x-EF4223?style=for-the-badge&logo=codeigniter&logoColor=white" alt="CodeIgniter">
+    <img src="https://img.shields.io/badge/Tailwind_CSS-3.x-38BDF8?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
+    <img src="https://img.shields.io/badge/MySQL-8.0%2B-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
+    <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
+  </p>
 
-สรุปสถิติตัวเลขบุคลากรทั้งหมด, ผู้ผ่านการอบรม, หลักสูตรที่เปิด และร้อยละตัวชี้วัดสะสม
+</div>
 
-Progress Bar ความก้าวหน้าการส่งหลักฐานเทียบเป้าหมายขั้นต่ำ (80%) และเป้าหมายสูงสุด (100%)
+---
 
-Data Visualization (Chart.js):
+## 📑 สารบัญ (Table of Contents)
+- [เกี่ยวกับโปรเจกต์ (About The Project)](#-เกี่ยวกับโปรเจกต์-about-the-project)
+- [เทคโนโลยีที่ใช้ (Tech Stack)](#-เทคโนโลยีที่ใช้-tech-stack)
+- [ฟีเจอร์เด่น (Key Features)](#-ฟีเจอร์เด่น-key-features)
+- [โครงสร้างระบบฐานข้อมูล (Database Architecture)](#-โครงสร้างระบบฐานข้อมูล-database-architecture)
+- [วิธีติดตั้งระบบ (Installation)](#-วิธีติดตั้งระบบ-installation)
+- [วิธีใช้งาน (Usage)](#-วิธีใช้งาน-usage)
+- [การสนับสนุนและการรับรอง (Organization)](#-หน่วยงานผู้พัฒนา-organization)
+- [สิทธิ์การใช้งาน (License)](#-สิทธิ์การใช้งาน-license)
 
-สัดส่วนระดับการพัฒนาอบรม (Doughnut Chart 70%)
+---
 
-สถิติผลการอบรมจำแนกตามรายหน่วยงาน (Progress List 30%)
+## 📖 เกี่ยวกับโปรเจกต์ (About The Project)
 
-Dynamic Tab List & AJAX DataTables (5 Level Tabs):
+**PBH-MOPHCOURSE** เป็น web application สำหรับบริหารจัดการและรายงานผลการอบรมพัฒนาบุคลากรตามเกณฑ์มาตรฐานกระทรวงสาธารณสุข (MOPH) ของ **โรงพยาบาลพิบูลมังสาหาร จังหวัดอุบลราชธานี**
 
-แยกตารางรายชื่อออกเป็น 5 ระดับหลักสูตร (1: ผู้อำนวยการ, 2: รองผู้อำนวยการ/ผู้รับมอบหมาย, 3: หัวหน้ากลุ่มงาน, 4: เจ้าหน้าที่ IT, 5: บุคลากรทั่วไป)
+### 🎯 ปัญหาที่ระบบเข้ามาแก้ไข:
+* **ความกระจัดกระจายของข้อมูล:** จัดเก็บข้อมูลการอบรมและไฟล์แนบหลักฐาน (เกียรติบัตร/ใบรับรอง) ให้อยู่ในฐานข้อมูลกลางที่ปลอดภัย
+* **ความล่าช้าในการสรุปรายงาน:** ช่วยให้ผู้บริหารและกลุ่มงานบริหารทรัพยากรบุคคล สามารถตรวจสอบร้อยละการผ่านการอบรมแยกตามระดับตำแหน่งและหน่วยงานได้แบบ Real-time
+* **ความซ้ำซ้อนในการจัดเก็บเอกสาร:** มีระบบบีบอัดไฟล์ภาพ/PDF แบบรวมรายบุคคล หรือรวมตามหลักสูตร (ZIP/PDF Merging) ช่วยลดเวลาการเตรียมเอกสารสำหรับการรับการตรวจประเมินคุณภาพ (HA / ITA)
 
-โหลดข้อมูลตารางผ่าน AJAX แบบ dynamic ไม่ต้อง reload หน้าเว็บ
+---
 
-Custom Position & Department Logic:
+## 🛠 เทคโนโลยีที่ใช้ (Tech Stack)
 
-ดึงชื่อโรงพยาบาลจาก .env (project.hosname) มาต่อท้ายตำแหน่งอัตโนมัติ
+* **Backend Framework:** CodeIgniter 4 (PHP 8.2+)
+* **Frontend Framework:** Tailwind CSS, Bootstrap 5, DataTables
+* **Database Management:** MySQL / MariaDB (รองรับ Stored Procedures และ Triggers)
+* **Libraries & Tools:** 
+  * `mPDF` - สำหรับรวมและออกรายงานเอกสาร PDF
+  * `ZipArchive` - สำหรับบีบอัดไฟล์หลักฐานแบบกลุ่ม
+  * `SweetAlert2` - ระบบแจ้งเตือน Interactive UI
 
-Level 1: ตำแหน่ง = ผู้อำนวยการ + project.hosname, ฝ่าย/กลุ่มงาน = ""
+---
 
-Level 2: ตำแหน่ง = รองผู้อำนวยการ + project.hosname, ฝ่าย/กลุ่มงาน = wg_name
+## ✨ ฟีเจอร์เด่น (Key Features)
 
-Level 3: ตำแหน่ง = หัวหน้ากลุ่มงาน + wg_name
+* 📊 **Multi-Level Dashboard & Analytics:** สรุปภาพรวมการส่งผลการอบรมแยกตามระดับการอบรม (Level 1 - Level 5) และแยกตามกลุ่มงาน/ฝ่าย
+* 📂 **Dynamic Export Engine:** รองรับการกรองข้อมูลและสร้างไฟล์แคช CSV พร้อมส่งออกไฟล์หลักฐานแนบเป็น ZIP Archive หรือ PDF รวมได้เพียงคลิกเดียว
+* 🔍 **Smart Filter & Search:** ระบบค้นหาและตัวกรองข้อมูลบุคลากรแบบสองระดับ (Cascading Filter: Workgroup ➔ Department)
+* 🛡 **Role-Based Access Control:** แบ่งสิทธิ์การเข้าถึงระหว่างบุคลากรทั่วไป (Upload Certificate) และผู้ดูแลระบบ Admin (Dashboard & Export Engine)
+* ⚡ **Data Caching & Temp Optimization:** มีระบบจัดการไฟล์แคชชั่วคราวและ Truncate ตารางแคชอัตโนมัติเพื่อคงประสิทธิภาพของ Server
 
-File Attachment Handling: ตรวจสอบและแสดงปุ่มเปิดดูวุฒิบัตร/หลักฐาน PDF (file_path) พร้อมป้ายสถานะการอัปโหลด
+---
 
-🛠 Tech Stack & Dependencies
-Backend: CodeIgniter 4 (PHP 8.1+)
+## 🗄 โครงสร้างระบบฐานข้อมูล (Database Architecture)
 
-Database: MariaDB / MySQL 5.7+
+ตารางหลักที่ใช้ในการขับเคลื่อนระบบ:
+* `tr_employee`: เก็บข้อมูลบุคลากร ตำแหน่ง และสังกัด
+* `tr_workgroup`: เก็บข้อมูลกลุ่มงานหลัก (Workgroup)
+* `tr_department`: เก็บข้อมูลฝ่าย/งานย่อย (Department)
+* `tr_course`: รายการหลักสูตรอบรมตามเกณฑ์ MOPH
+* `tr_temp_file_export`: ตารางพักข้อมูลชั่วคราวสำหรับการประมวลผล Export ไฟล์
 
-Frontend Framework & Styling:
+---
 
-Tailwind CSS v3 (Glassmorphism UI Theme)
+## 📥 วิธีติดตั้งระบบ (Installation)
 
-Bootstrap Icons
+### ข้อกำหนดเบื้องต้น (Prerequisites)
+* PHP >= 8.2 (พร้อมเปิดใช้งาน extension `gd`, `zip`, `mbstring`, `intl`)
+* Composer
+* MySQL / MariaDB Server
+* Web Server (Apache / Nginx / XAMPP)
 
-JavaScript Libraries:
+### ขั้นตอนการติดตั้ง (Step-by-Step)
 
-jQuery
-
-DataTables v1.13+ (Client/AJAX Processing)
-
-Chart.js v4
-
-⚙️ การตั้งค่าและติดตั้ง (Installation & Configuration)
-1. ความต้องการของระบบ (Prerequisites)
-PHP >= 8.1 (รองรับ extension mysqli, intl, mbstring, json)
-
-Composer
-
-MariaDB / MySQL Server
-
-2. ตั้งค่าไฟล์สภาพแวดล้อม (.env)
-คัดลอกไฟล์ env เป็น .env แล้วตั้งค่าการเชื่อมต่อฐานข้อมูลและชื่อหน่วยงาน:
-
-Ini, TOML
-# Application Setup
-CI_ENVIRONMENT = development
-
-# Database Setup
-database.default.hostname = localhost
-database.default.database = db_training
-database.default.username = root
-database.default.password = 
-database.default.DBDriver = MySQLi
-database.default.port = 3306
-
-# Project Configuration
-project.hosname = "โรงพยาบาลโพธิ์ไทร"
-🗄️ Database Structure & Query Example
-ตารางหลักที่ใช้งานในระบบ: tr_employee, tr_workgroup, tr_department, tr_uploadfile, tr_course
-
-SQL Query สำหรับดึงข้อมูลส่ง AJAX (Controller)
-SQL
-SELECT
-  emp.emp_id,
-  emp.hcode,
-  emp.cid,
-  CONCAT(emp.prefix_name, emp.fullname) AS fname,
-  emp.position,
-  dp.dp_name,
-  wg.wg_name,
-  fu.file_id,
-  fu.file_path,
-  GROUP_CONCAT(DISTINCT fu.course_name SEPARATOR ', ') AS course_name,
-  fu.course_type,
-  MAX(fu.upload_date) AS upload_date
-FROM
-  tr_employee emp
-  LEFT JOIN tr_workgroup wg ON wg.wg_id = emp.workgroup_id
-  LEFT JOIN tr_department dp ON dp.dp_id = emp.department_id
-  LEFT JOIN (
-    SELECT
-      fi.file_id,
-      fi.cid,
-      fi.file_name AS file_path,
-      fi.d_update AS upload_date,
-      cr.course_id,
-      cr.course_name,
-      cr.course_type
-    FROM
-      tr_uploadfile fi
-      LEFT JOIN tr_course cr ON cr.course_id = fi.course_id
-  ) fu ON fu.cid = emp.cid
-WHERE
-  ( CASE 
-      WHEN dataworkgroup NOT IN(1,2,3,4) THEN emp.workgroup_hq IS NULL
-      ELSE emp.workgroup_hq = dataworkgroup 
-    END )
-  AND department_hq = datadepart
-GROUP BY
-  emp.emp_id, emp.hcode, emp.prefix_name, emp.fullname, emp.position, dp.dp_name, wg.wg_name
-ORDER BY
-  emp.workgroup_id ASC, emp.department_id ASC;
-⚡ API Endpoint (AJAX Request)
-GET /dashboard/getPassedEmployeesByLevel
-ดึงข้อมูลรายชื่อผู้ผ่านการอบรมแยกตามระดับหลักสูตรสำหรับ DataTables
-
-Query Parameters:
-
-level (int): 1 | 2 | 3 | 4 | 5
-
-JSON Response Structure Example:
-
-JSON
-{
-  "status": "success",
-  "data": [
-    {
-      "emp_id": "1",
-      "cid": "3340100XXXXXX",
-      "fname": "นายสมชาย ใจดี",
-      "position": "นักจัดการงานทั่วไปชำนาญการ",
-      "dp_name": "กลุ่มงานบริหารทั่วไป",
-      "wg_name": "งานสารสนเทศ",
-      "course_name": "Cybersecurity & Public Health Data Governance",
-      "upload_date": "2026-03-20 10:30:00",
-      "file_path": "cert_101.pdf"
-    }
-  ]
-}
-📂 Project Structure
-Plaintext
-app/
-├── Controllers/
-│   └── Dashboard.php                 # Controller หลัก และ AJAX Endpoint
-├── Views/
-│   ├── dashboard.php                 # Main Dashboard View (UI, Tabs, Chart & DataTables Script)
-│   └── layouts/
-│       └── main_layout.php           # Master Layout
-public/
-├── uploads/
-│   └── certificates/                 # โฟลเดอร์เก็บไฟล์เอกสาร/วุฒิบัตรแนบ (.pdf)
-└── css/
-    └── dashboard.css                 # Custom Styling
-📄 License
-ระบบนี้จัดทำขึ้นเพื่อใช้งานภายในหน่วยงาน สิทธิในซอร์สโค้ดและการใช้งานเป็นไปตามข้อกำหนดขององค์ก
+1. **Clone Repository**
+   ```bash
+   git clone [https://github.com/your-organization/pbh-mophcourse.git](https://github.com/your-organization/pbh-mophcourse.git)
+   cd pbh-mophcourse
