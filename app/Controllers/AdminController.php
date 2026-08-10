@@ -7,6 +7,8 @@ use App\Models\CourseModel;
 use App\Models\EmployeeModel;
 use App\Models\UploadFileModel;
 use App\Models\TrTempFileModel;
+use App\Models\TrWorkgroupModel;
+
 use Mpdf\Mpdf;
 use ZipArchive; // 👈 เพิ่มบรรทัดนี้
 
@@ -167,7 +169,11 @@ class AdminController extends BaseController
 
     public function courseDownloads()
     {
-        return view('admin/course_download');
+        $workgroup = new TrWorkgroupModel();
+
+        $data['wgList'] = $workgroup->findWorkgroup();
+
+        return view('admin/course_download',$data);
     }
 
     /**
@@ -197,60 +203,68 @@ class AdminController extends BaseController
 
         return $this->response->setJSON(['status' => 'error', 'message' => 'ไม่สามารถลบข้อมูลหลักสูตรได้']);
     }
-    /**
-     * 📝 สร้าง/อัปเดตไฟล์ CSV ตามเงื่อนไข filter_course_type และ filter_course_name
+
+   /**
+     * 📝 สร้าง/อัปเดตไฟล์ CSV ตามเงื่อนไข (รองรับทั้ง course_type และ workgroup)
      */
     public function generateCsv()
     {
         $tempModel = new TrTempFileModel();
 
-        if (!$this->request->isAJAX()) {
-            return $this->response->setStatusCode(405)->setJSON(['status' => 'error', 'message' => 'Method Not Allowed']);
-        }
+        // 1. รับค่าจาก Request (รองรับทั้ง GET และ POST)
+        $filterType = $this->request->getVar('filter_type'); // 'course' หรือ 'workgroup'
+        $courseType = $this->request->getVar('course_type');
+        $courseName = $this->request->getVar('course_name');
+        $workgroup  = $this->request->getVar('workgroup');
+        $department = $this->request->getVar('department');
 
-        $courseType = $this->request->getGet('course_type');
-        $courseName = $this->request->getGet('course_name');
-
-        // กำหนดค่าเริ่มต้นเพื่อป้องกัน Undefined Variable
         $results = [];
+        $file_mpdf_name = "รายงานผลการอบรม";
 
-        switch ($courseType) {
-            case '1': 
-                $departType = "N";
-                $file_mpdf_name = "หลักสูตรอบรมระดับผู้อำนวยการ";                  
-                break;
-            case '2': 
-                $departType = "N";
-                $file_mpdf_name = "หลักสูตรอบรมระดับรองผู้อำนวยการ"; 
-                break;
-            case '3': 
-                $departType = "N";
-                $file_mpdf_name = "หลักสูตรอบรมระดับหัวหน้ากลุ่มงาน"; 
-                break;
-            case '4': 
-                $courseType = 5;
-                $departType = "Y";
-                $file_mpdf_name = "หลักสูตรอบรมระดับหัวหน้างาน"; 
-                break;
-            case '5': 
-                $courseType = 5;
-                $departType = "N";
-                $file_mpdf_name = "หลักสูตรอบรมระดับเจ้าหน้าที่"; 
-                break;
-            default: 
-                $courseType = 5;
-                $departType = "N";
-                $file_mpdf_name = "หลักสูตรอบรมระดับเจ้าหน้าที่"; 
-            break;
+        // 2. ดึงข้อมูลจาก Stored Procedure ตามประเภท Filter
+        if ($filterType === 'workgroup' || !empty($workgroup)) {
+            // 🔹 กรณีมาจากกลุ่มงาน/ฝ่าย (#filter_workgroup / #filter_department)
+            $results = $this->db->query(
+                'CALL getEmployee_ByWorkgroup_Csv(?,?,?)', 
+                [$workgroup, $department, "Y"]
+            )->getResultArray();
+
+            $file_mpdf_name = "หลักสูตรอบรมตามกลุ่มงาน_ฝ่าย";
+        } else {
+            // 🔹 กรณีมาจากระดับ/หัวข้อหลักสูตร (#filter_course_type / #filter_course_name)
+            switch ($courseType) {
+                case '1': 
+                    $departType = "N";
+                    $file_mpdf_name = "หลักสูตรอบรมระดับผู้อำนวยการ";                  
+                    break;
+                case '2': 
+                    $departType = "N";
+                    $file_mpdf_name = "หลักสูตรอบรมระดับรองผู้อำนวยการ"; 
+                    break;
+                case '3': 
+                    $departType = "N";
+                    $file_mpdf_name = "หลักสูตรอบรมระดับหัวหน้ากลุ่มงาน"; 
+                    break;
+                case '4': 
+                    $courseType = 5;
+                    $departType = "Y";
+                    $file_mpdf_name = "หลักสูตรอบรมระดับหัวหน้างาน"; 
+                    break;
+                case '5': 
+                default: 
+                    $courseType = 5;
+                    $departType = "N";
+                    $file_mpdf_name = "หลักสูตรอบรมระดับเจ้าหน้าที่"; 
+                    break;
+            }
+
+            $results = $this->db->query(
+                'CALL getEmployee_exportCSv(?,?,?)', 
+                [$courseType, $departType, $courseName]
+            )->getResultArray();
         }
-        //$departType = ($courseType < 4) ? "N" : "Y";
 
-        // 1. Query ข้อมูลตามเงื่อนไข
-        $db = \Config\Database::connect();
-        $results = $db->query('CALL getEmployee_exportCSv(?,?,?)', [$courseType, $departType, $courseName])->getResultArray();
-        
-
-        // 2. กำหนด Path และสร้างโฟลเดอร์ cache หากยังไม่มี
+        // 3. กำหนด Path และสร้างโฟลเดอร์ cache หากยังไม่มี
         $dirPath = WRITEPATH . 'cache';
         if (!is_dir($dirPath)) {
             mkdir($dirPath, 0777, true);
@@ -258,7 +272,7 @@ class AdminController extends BaseController
 
         $filePath = $dirPath . '/export_list.csv';
 
-        // 3. เปิดไฟล์แบบเขียนใหม่ (โหมด 'w' จะเคลียร์เนื้อหาเดิมให้อัตโนมัติโดยไม่ต้องสั่ง unlink)
+        // 4. เปิดไฟล์เพื่อเขียนข้อมูลใหม่ (โหมด 'w')
         $file = @fopen($filePath, 'w');
 
         if ($file === false) {
@@ -268,53 +282,99 @@ class AdminController extends BaseController
             ]);
         }
 
-        // 4. เขียน UTF-8 BOM เพื่อให้ภาษาไทยใน Excel ไม่เป็นภาษาต่างดาว
+        // 5. เขียน UTF-8 BOM สำหรับป้องกันภาษาไทยต่างดาวใน Excel
         fputs($file, "\xEF\xBB\xBF");
 
-        // 5. เขียน Header เพียงชุดเดียว
-        fputcsv($file, ['ID', 'Full Name', 'Position', 'Workgroup', 'Department', 'Course ID', 'Course Name', 'file_id', 'file_directory', 'file_name', 'Upload Date', 'file_pdf_name']);
+        // 6. เขียน Header Row
+        fputcsv($file, [
+            'ID', 
+            'Full Name', 
+            'Position', 
+            'Workgroup', 
+            'Department', 
+            'Course ID', 
+            'Course Name', 
+            'file_id', 
+            'file_directory', 
+            'file_name', 
+            'Upload Date', 
+            'file_pdf_name'
+        ]);
         
-        //$dataToInsert = [];
-        $tempModel->truncateTable(); // ล้างข้อมูลทั้งหมดในตาราง
-        
-        // 6. เขียนข้อมูลบุคลากรลง CSV
+        // 7. เคลียร์ข้อมูลเดิมในตาราง Temp
+        $tempModel->truncateTable(); 
+        $dataToInsert = [];
+
+        // 8. วนลูปเขียนข้อมูลบุคลากรลงไฟล์ CSV และเตรียมข้อมูลสำหรับ Temp Model
         foreach ($results as $row) {
-            if($row['course_id'] !=''):
+            $cId   = $row['course_id'] ?? '';
+            $fId   = $row['file_id'] ?? '';
+            $fDir  = $row['file_dir'] ?? '';
+            $fPath = $row['file_path'] ?? '';
+
+            if (!empty($cId)) {
                 $dataToInsert[] = [ 
-                    'file_id'     => $row['file_id'],
-                    'file_path'   => $row['file_dir'], 
-                    'file_name'   => $row['file_path'],
-                    'course_type' => $courseType,
-                    'course_id'   => $row['course_id']
+                    'file_id'     => $fId,
+                    'file_path'   => $fDir, 
+                    'file_name'   => $fPath,
+                    'course_type' => $courseType ?? 0,
+                    'course_id'   => $cId
                 ];
-                fputcsv($file, [
-                    $row['cid'] ?? '',
-                    $row['fname'] ?? '',
-                    $row['position'] ?? '',
-                    $row['wg_name'] ?? '',
-                    $row['dp_name'] ?? '',
-                    $row['course_id'] ?? '',
-                    $row['course_name'] ?? '',
-                    $row['file_id'] ?? '',
-                    $row['file_dir'] ?? '',
-                    $row['file_path'] ?? '',
-                    $row['upload_date'] ?? '',
-                    $file_mpdf_name ?? ''
-                ]);
-            endif;
+            }
+
+            fputcsv($file, [
+                $row['cid'] ?? '',
+                $row['fname'] ?? '',
+                $row['position'] ?? '',
+                $row['wg_name'] ?? '',
+                $row['dp_name'] ?? '',
+                $cId,
+                $row['course_name'] ?? '',
+                $fId,
+                $fDir,
+                $fPath,
+                $row['upload_date'] ?? '',
+                $file_mpdf_name
+            ]);
         }
 
-        // 3. บันทึกแบบ Batch Insert
-        $tempModel->insertBatchTempFiles($dataToInsert);
+        // 9. บันทึกข้อมูล Temp Data เข้าฐานข้อมูล (กรณีมีรายการไฟล์)
+        if (!empty($dataToInsert)) {
+            $tempModel->insertBatchTempFiles($dataToInsert);
+        }
 
-        // 7. ปิดไฟล์หลังจากเขียนข้อมูลทั้งหมดเสร็จสิ้น
+        // 10. ปิดไฟล์ CSV
         fclose($file);
+
+        // 11. ส่ง Response JSON กลับไปที่ AJAX
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'message' => 'อัปเดตไฟล์ export_list.csv สำเร็จ',
+            'count'   => count($results),
+            'data'    => $results
+        ]);
+    }
+
+    /**
+     * 🏢 AJAX ดึงรายการ Department ตาม Workgroup ID
+     */
+    public function getDepartmentsByWorkgroup()
+    {
+        $wgId = $this->request->getVar('wg_id');
+
+        if (empty($wgId)) {
+            // 🛠️ เปลี่ยนจาก $db เป็น $this->db
+            $departments = $this->db->table('tr_department')->get()->getResultArray();
+        } else {
+            // 🛠️ เปลี่ยนจาก $db เป็น $this->db
+            $departments = $this->db->table('tr_department')
+                            ->where('wg_id', $wgId)
+                            ->get()->getResultArray();
+        }
 
         return $this->response->setJSON([
             'status' => 'success',
-            'message' => 'อัปเดตไฟล์ export_list.csv สำเร็จ ',
-            'count' => count($results),
-            'data' => $results
+            'data'   => $departments
         ]);
     }
 
@@ -683,6 +743,62 @@ class AdminController extends BaseController
         } catch (\Exception $e) {
             log_message('error', 'generateMergedPdfContent Exception: ' . $e->getMessage());
             return null;
+        }
+    }
+
+    public function deleteFile()
+    {
+        $request  = $this->request->getPost();
+        $recordId = $request['id'] ?? null;
+        $fileName = $request['file_name'] ?? null;
+
+        if (empty($recordId)) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'ไม่พบข้อมูล ID รายการที่ต้องการลบ'
+            ]);
+        }
+
+        try {
+            // 1. ลบไฟล์จริงในเครื่อง ( Physical File )
+            if (!empty($fileName)) {
+                $filePathCandidates = [
+                    FCPATH . 'uploads/certificates/' . $fileName,
+                    WRITEPATH . 'uploads/certificates/' . $fileName,
+                    FCPATH . 'uploads/' . $fileName,
+                    WRITEPATH . 'uploads/' . $fileName
+                ];
+
+                foreach ($filePathCandidates as $filePath) {
+                    if (file_exists($filePath) && is_file($filePath)) {
+                        @unlink($filePath); // ลบไฟล์ออกจากดิสก์
+                        break;
+                    }
+                }
+            }
+
+            // 2. เคลียร์ชื่อไฟล์ในฐานข้อมูล (ปรับชื่อ Model/ตาราง ตามระบบของคุณ)
+            $db = \Config\Database::connect();
+            
+            // ตัวอย่าง: อัปเดตฟิลด์ file_name/file_path ในตารางหลักให้เป็น NULL หรือลบทั้ง Record
+            $db->table('your_table_name')
+            ->where('id', $recordId)
+            ->update([
+                'file_name' => null,
+                'file_path' => null
+            ]);
+
+            return $this->response->setJSON([
+                'status'  => 'success',
+                'message' => 'ลบไฟล์สำเร็จเรียบร้อยแล้ว'
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'deleteFile Error: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: ' . $e->getMessage()
+            ]);
         }
     }
 

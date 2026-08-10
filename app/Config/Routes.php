@@ -48,11 +48,13 @@ $routes->group('admin', ['filter' => 'auth'], function ($routes) {
     $routes->post('deleteCourse', 'AdminController::deleteCourse');
     $routes->get('course-reports', 'AdminController::courseDetails');
     $routes->get('course-export', 'AdminController::courseDownloads');
+    $routes->post('course-delete', 'AdminController::deleteFile');
 
     //การส่งออกข้อมูล (Export Data)
-    $routes->get('export/generateCsv', 'AdminController::generateCsv');
+    $routes->post('export/generateCsv', 'AdminController::generateCsv');
     $routes->post('export/exportZip', 'AdminController::exportZip');
     $routes->get('export/getCsvData', 'AdminController::getExportCsvData');
+    $routes->get('export/getDepartmentsByWorkgroup', 'AdminController::getDepartmentsByWorkgroup');
     $routes->post('export/exportPdf', 'AdminController::exportPdf');
 
     // 👔 การจัดการข้อมูลบุคลากร (tr_employee Management)

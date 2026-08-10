@@ -63,13 +63,12 @@
                         <label class="block text-xs font-semibold text-slate-600 mb-1">หัวข้อหลักสูตร</label>
                         <select id="filter_course_id" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#154c9f] outline-none">
                             <option value="">-- ทั้งหมด --</option>
-                            <!-- ดึงรายการหัวข้อหลักสูตรมาใส่แบบ Dynamic -->
                         </select>
                     </div>
                 </div>
             </div>
 
-            <!-- PANEL 2: ตัวกรองหน่วยงาน (Client-side DataTables Filter) -->
+            <!-- PANEL 2: ตัวกรองหน่วยงาน -->
             <div id="panel-tab2" class="tab-panel hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -89,7 +88,7 @@
 
         </div>
 
-        <!-- 📊 Data Container (ซ่อนไว้เมื่อ load หน้าครั้งแรก) -->
+        <!-- 📊 Data Container -->
         <div id="tableContainer" class="hidden transition-all duration-300">
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs">
                 <table id="employeeReportTable" class="w-full text-sm text-left text-slate-600">
@@ -101,7 +100,7 @@
                             <th class="px-3 py-3">กลุ่มงาน</th>
                             <th class="px-3 py-3">งาน/ฝ่าย</th>
                             <th class="px-3 py-3">หลักสูตร</th>
-                            <th class="px-3 py-3 text-center">หลักฐาน/ดาวน์โหลด</th> <!-- 👈 คอลัมน์ที่ 6 -->
+                            <th class="px-3 py-3 text-center">หลักฐาน/ดาวน์โหลด</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -112,7 +111,8 @@
     </div>
     </div>           
 </div>
-<!-- 📑 Modal แสดงรายการผลการอบรม/ดาวน์โหลดไฟล์ -->
+
+<!-- 📑 Modal แสดงรายการผลการอบรม/จัดการไฟล์ -->
 <div id="fileDownloadModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 transition-all duration-200">
     <div class="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-lg overflow-hidden transform transition-all">
         
@@ -163,68 +163,112 @@
 <!-- ⚡ Section สำหรับ Custom JS Filter -->
 <?= $this->section('page_scripts') ?>
 <script>
+    let currentRecordId = null; // เก็บ ID แถวเพื่อใช้ reload
 
+    // 2️⃣ ฟังก์ชันเปิด Modal และแสดงข้อมูล
+    function openFileModal(encodedRowData) {
+        const row = JSON.parse(decodeURIComponent(encodedRowData));
+        currentRecordId = row.id || row.file_id || null;
+        
+        // ตั้งชื่อเจ้าของตาราง
+        $('#modal_owner_name').text(row.fname || row.fullname || '-');
+        
+        const fileListContainer = $('#modal_file_list');
+        fileListContainer.empty();
 
-            // 2️⃣ ฟังก์ชันเปิด Modal และแสดงข้อมูล
-            function openFileModal(encodedRowData) {
-                const row = JSON.parse(decodeURIComponent(encodedRowData));
+        const filePath = row.file_path || row.file_name || null;
+        const courses = row.course_name ? row.course_name.split(',') : ['หลักสูตรอบรม'];
+
+        if (filePath) {
+            courses.forEach((courseTitle, idx) => {
+                const cleanTitle = courseTitle.trim();
+                const downloadUrl = `<?= base_url('uploads/certificates/') ?>/${filePath}`;
                 
-                // ตั้งชื่อเจ้าของตาราง
-                $('#modal_owner_name').text(row.fname || row.fullname || '-');
-                
-                const fileListContainer = $('#modal_file_list');
-                fileListContainer.empty();
-
-                // ดึงข้อมูลไฟล์แนบ (รองรับทั้งไฟล์เดียว หรือหลายไฟล์ที่แยกด้วยคอมม่า)
-                const filePath = row.file_path || row.file_name || null;
-                const courses = row.course_name ? row.course_name.split(',') : ['หลักสูตรอบรม'];
-
-                if (filePath) {
-                    // หากมีไฟล์แนบ
-                    courses.forEach((courseTitle, idx) => {
-                        const cleanTitle = courseTitle.trim();
-                        const downloadUrl = `<?= base_url('uploads/certificates/') ?>/${filePath}`;
-                        
-                        fileListContainer.append(`
-                            <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-blue-300 transition-all">
-                                <div class="flex items-center gap-2.5 overflow-hidden pr-2">
-                                    <i class="bi bi-file-earmark-pdf-fill text-rose-500 text-xl flex-shrink-0"></i>
-                                    <span class="text-xs font-medium text-slate-700 truncate" title="${cleanTitle}">${cleanTitle}</span>
-                                </div>
-                                <a href="${downloadUrl}" target="_blank" download
-                                class="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium flex-shrink-0 transition-all shadow-2xs">
-                                    <i class="bi bi-[#154c9f] bi-download"></i>
-                                    <span>เปิด/ดาวน์โหลด</span>
-                                </a>
-                            </div>
-                        `);
-                    });
-                } else {
-                    // กรณีไม่มีไฟล์แนบ
-                    fileListContainer.html(`
-                        <div class="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400">
-                            <i class="bi bi-file-earmark-x text-2xl block mb-1"></i>
-                            <span class="text-xs">ยังไม่มีไฟล์หลักฐานการอบรมในระบบ</span>
+                // 🟢 เพิ่มปุ่มลบไฟล์แนบเข้าในรายการ
+                fileListContainer.append(`
+                    <div class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-blue-300 transition-all gap-2" id="file_item_${currentRecordId}">
+                        <div class="flex items-center gap-2.5 overflow-hidden pr-2">
+                            <i class="bi bi-file-earmark-pdf-fill text-rose-500 text-xl flex-shrink-0"></i>
+                            <span class="text-xs font-medium text-slate-700 truncate" title="${cleanTitle}">${cleanTitle}</span>
                         </div>
-                    `);
-                }
-
-                // แสดง Modal
-                $('#fileDownloadModal').removeClass('hidden');
-            }
-
-            // 3️⃣ ฟังก์ชันปิด Modal
-            function closeFileModal() {
-                $('#fileDownloadModal').addClass('hidden');
-            }
-
-            // ปิด Modal เมื่อกดปุ่ม ESC
-            $(document).on('keydown', function(e) {
-                if (e.key === "Escape") {
-                    closeFileModal();
-                }
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <!-- ปุ่มเปิด/ดาวน์โหลด -->
+                            <a href="${downloadUrl}" target="_blank" download
+                               class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-all shadow-2xs">
+                                <i class="bi bi-download"></i>
+                                <span>ดาวน์โหลด</span>
+                            </a>
+                            
+                            <!-- 🗑️ ปุ่มลบไฟล์ -->
+                            <button type="button" onclick="deleteFile('${currentRecordId}', '${filePath}')" 
+                                    class="inline-flex items-center gap-1 px-2 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 hover:border-transparent rounded-lg text-xs font-medium transition-all" 
+                                    title="ลบไฟล์แนบนี้">
+                                <i class="bi bi-trash-fill"></i>
+                                <span>ลบ</span>
+                            </button>
+                        </div>
+                    </div>
+                `);
             });
+        } else {
+            fileListContainer.html(`
+                <div class="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400">
+                    <i class="bi bi-file-earmark-x text-2xl block mb-1"></i>
+                    <span class="text-xs">ยังไม่มีไฟล์หลักฐานการอบรมในระบบ</span>
+                </div>
+            `);
+        }
+
+        $('#fileDownloadModal').removeClass('hidden');
+    }
+
+    // 🗑️ ฟังก์ชันส่ง AJAX ไปลบไฟล์ที่ Controller
+    function deleteFile(recordId, fileName) {
+        if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์แนบนี้? เมื่อลบแล้วจะไม่สามารถกู้คืนได้')) {
+            return;
+        }
+
+        $.ajax({
+            url: '<?= base_url("admin/course-delete") ?>',
+            type: 'POST',
+            data: {
+                id: recordId,
+                file_name: fileName,
+                <?= csrf_token() ?>: '<?= csrf_hash() ?>' // ส่ง CSRF Token เพื่อความปลอดภัย
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert('ลบไฟล์เรียบร้อยแล้ว');
+                    closeFileModal();
+                    
+                    // Reload ตาราง DataTables
+                    if (window.reportTable) {
+                        window.reportTable.ajax.reload(null, false);
+                    }
+                } else {
+                    alert(response.message || 'เกิดข้อผิดพลาดในการลบไฟล์');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Delete File Error:', error);
+                alert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์เพื่อลบไฟล์ได้');
+            }
+        });
+    }
+
+    // 3️⃣ ฟังก์ชันปิด Modal
+    function closeFileModal() {
+        $('#fileDownloadModal').addClass('hidden');
+    }
+
+    $(document).on('keydown', function(e) {
+        if (e.key === "Escape") {
+            closeFileModal();
+        }
+    });
 </script>
+
 <script>
 $(document).ready(function() {
     let table = null;
@@ -246,34 +290,25 @@ $(document).ready(function() {
         }
     });
 
-    // 2️⃣ เมื่อเลือก "ประเภทหลักสูตร" ใน Tab 1 -> เรียก AJAX โหลดตาราง & ปลดล็อค Tab 2 
+    // 2️⃣ เมื่อเลือก "ประเภทหลักสูตร"
     $('#filter_course_type').on('change', function() {
         const selectedLevel = $(this).val();
 
         if (!selectedLevel) {
-            // ถ้าไม่เลือก ให้รีเซ็ต Dropdown หัวข้อหลักสูตร, ซ่อนตาราง และล็อค Tab 2
             resetCourseDropdown();
             $('#tableContainer').addClass('hidden');
             disableTab2();
             return;
         }
 
-        // 1️⃣ โหลดรายการหัวข้อหลักสูตรเข้า #filter_course_id ผ่าน AJAX
         loadCourseDropdown(selectedLevel);
-
-        // 2️⃣ แสดงตารางข้อมูล และปลดล็อค Tab 2
         $('#tableContainer').removeClass('hidden');
         enableTab2();
-
-        // 3️⃣ โหลดข้อมูลตาราง DataTables
         initOrReloadTable(selectedLevel);
     });
 
-    // 📌 ฟังก์ชัน AJAX ดึงข้อมูล group มาใส่ #filter_course_id
     function loadCourseDropdown(level) {
         const courseSelect = $('#filter_course_id');
-        
-        // แสดงสถานะกำลังโหลด
         courseSelect.html('<option value="">-- กำลังโหลดหัวข้อหลักสูตร... --</option>').prop('disabled', true);
 
         $.ajax({
@@ -284,11 +319,8 @@ $(document).ready(function() {
             success: function(response) {
                 courseSelect.html('<option value="">-- ทั้งหมด --</option>');
 
-                // 🎯 ดึง Array จาก key "group" โดยตรงตามโครงสร้าง response
                 if (response && response.status === 'success' && Array.isArray(response.group)) {
-                    
                     $.each(response.group, function(index, item) {
-                        // ใช้ course_name แสดงชื่อหลักสูตรใน Dropdown
                         if (item.course_name) {
                             courseSelect.append(`<option value="${item.course_name}">${item.course_name}</option>`);
                         }
@@ -297,7 +329,6 @@ $(document).ready(function() {
 
                 courseSelect.prop('disabled', false);
                 if (table) {
-                    // ทำการ Client-side Filter ที่คอลัมน์หลักสูตร (สมมติว่าเป็น Column Index 5)
                     table.column(5).search('', false, false).draw();
                 }
             },
@@ -308,28 +339,22 @@ $(document).ready(function() {
         });
     }
 
-    // 📌 ฟังก์ชันสั่งกรองตารางเมื่อเลือก "หัวข้อหลักสูตร" ใน Tab 1
     $('#filter_course_id').on('change', function() {
         const selectedCourseName = $(this).val();
-        
         if (table) {
-            // ทำการ Client-side Filter ที่คอลัมน์หลักสูตร (สมมติว่าเป็น Column Index 5)
             table.column(5).search(selectedCourseName ? selectedCourseName : '', false, false).draw();
         }
     });
 
     // 3️⃣ ฟังก์ชันสร้าง/โหลดตาราง DataTables
     function initOrReloadTable(level) {
-        // กำหนด Endpoint ให้ตรงกับ Controller CI4 ของคุณ
         const ajaxUrl = '<?= base_url("data/employees_bylevel.php") ?>';
 
         if ($.fn.DataTable.isDataTable('#employeeReportTable')) {
-            // ถ้ามี DataTable อยู่แล้ว ให้ reload AJAX ดึง level ใหม่
             table.ajax.url(`${ajaxUrl}?level=${level}`).load(function() {
-                populateTab2Dropdowns(); // เติม Dropdown กลุ่มงาน/งาน อัตโนมัติหลังดึงข้อมูลเสร็จ
+                populateTab2Dropdowns();
             });
         } else {
-            // 1️⃣ ตั้งค่า DataTables
             table = $('#employeeReportTable').DataTable({
                 processing: true,
                 responsive: true,
@@ -352,24 +377,21 @@ $(document).ready(function() {
                         className: 'text-center',
                         render: (data, type, row, meta) => meta.row + 1 
                     },
-                    { data: 'fullname', defaultContent: '-' },
+                    { data: 'fname', defaultContent: '-' },
                     { data: 'position', defaultContent: '-' },
                     { data: 'wg_name', defaultContent: '-' },
                     { data: 'dp_name', defaultContent: '-' },
                     { data: 'course_name', defaultContent: '-' },
-                    
-                    // 🎯 คอลัมน์ที่ 6: ดาวน์โหลดไฟล์ (ปุ่มเปิด Modal)
                     {
                         data: null,
                         className: 'text-center align-middle whitespace-nowrap',
                         render: function(data, type, row) {
-                            // แปลงข้อมูลแถวเป็น JSON String เพื่อส่งเข้า Modal
                             const rowDataStr = encodeURIComponent(JSON.stringify(row));
                             return `
                                 <button type="button" onclick="openFileModal('${rowDataStr}')" 
                                         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-[#154c9f] text-[#154c9f] hover:text-white border border-blue-200 hover:border-transparent rounded-xl text-xs font-semibold transition-all shadow-2xs">
                                     <i class="bi bi-file-earmark-arrow-down-fill text-sm"></i>
-                                    <span>ดาวน์โหลด</span>
+                                    <span>ดาวน์โหลด / จัดการไฟล์</span>
                                 </button>
                             `;
                         }
@@ -393,34 +415,27 @@ $(document).ready(function() {
                     }
                 }
             });
+
+            // ผูกตัวแปร table ให้ใช้ทั่วโลก
+            window.reportTable = table;
         }
     }
 
-    // 4️⃣ ตัวกรองใน Tab 2: ใช้คุณสมบัติ DataTables ในการกรอง (Client-side Search/Filter)
     $('#filter_workgroup').on('change', function() {
         const val = $.fn.dataTable.util.escapeRegex($(this).val());
-        // กรองที่ คอลัมน์ index 3 (wg_name)
         table.column(3).search(val ? '^' + val + '$' : '', true, false).draw();
     });
 
     $('#filter_department').on('change', function() {
         const val = $.fn.dataTable.util.escapeRegex($(this).val());
-        // กรองที่ คอลัมน์ index 4 (dp_name)
         table.column(4).search(val ? '^' + val + '$' : '', true, false).draw();
     });
 
-    // 5️⃣ ตัวกรองหัวข้อหลักสูตรใน Tab 1 (Client-side Filter เช่นกัน)
-    $('#filter_course_id').on('change', function() {
-        const val = $(this).val();
-        table.column(5).search(val).draw();
-    });
-
-    // 🛠️ Helper Functions ปลดล็อค / ล็อค Tab 2
     function enableTab2() {
         $('#tab2-btn').prop('disabled', false)
                       .removeClass('cursor-not-allowed opacity-60 text-slate-400')
                       .addClass('text-slate-600 hover:text-[#154c9f]');
-        $('#tab2-btn span:last-child').addClass('hidden'); // ซ่อนป้าย Disabled
+        $('#tab2-btn span:last-child').addClass('hidden');
     }
 
     function disableTab2() {
@@ -428,10 +443,9 @@ $(document).ready(function() {
                       .addClass('cursor-not-allowed opacity-60 text-slate-400')
                       .removeClass('text-slate-600 hover:text-[#154c9f]');
         $('#tab2-btn span:last-child').removeClass('hidden');
-        $('#tab1-btn').trigger('click'); // เด้งกลับ Tab 1
+        $('#tab1-btn').trigger('click');
     }
 
-    // 🛠️ Dynamic Populate Dropdowns สำหรับ Tab 2 จากข้อมูลที่โหลดมาแล้ว
     function populateTab2Dropdowns() {
         if (!table) return;
 
@@ -444,12 +458,10 @@ $(document).ready(function() {
         wgSelect.html('<option value="">-- แสดงทุกกลุ่มงาน --</option>');
         dpSelect.html('<option value="">-- แสดงทุกงาน/ฝ่าย --</option>');
 
-        // ดึง Unique Values จากคอลัมน์ wg_name (index 3)
         table.column(3, { search: 'applied' }).data().unique().sort().each(function(d) {
             if (d) wgSelect.append(`<option value="${d}" ${d === currentWg ? 'selected' : ''}>${d}</option>`);
         });
 
-        // ดึง Unique Values จากคอลัมน์ dp_name (index 4)
         table.column(4, { search: 'applied' }).data().unique().sort().each(function(d) {
             if (d) dpSelect.append(`<option value="${d}" ${d === currentDp ? 'selected' : ''}>${d}</option>`);
         });

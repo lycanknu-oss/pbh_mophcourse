@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 class DashboardController extends BaseController
 {
+    protected $db;
+
     public function __construct()
     {
         $this->db = \Config\Database::connect();
